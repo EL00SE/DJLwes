@@ -1,0 +1,20 @@
+# Local Postgres for development. Not used in production — Vercel deploys
+# should point DATABASE_URL at a hosted Postgres (Neon, Supabase, Vercel
+# Postgres, etc.) instead.
+#
+# Usage: docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: djlwes
+      POSTGRES_PASSWORD: djlwes
+      POSTGRES_DB: djlwes
+    ports:
+      - "5432:5432"
+    volumes:
+      - djlwes_pgdata:/var/lib/postgresql/data
+
+volumes:
+  djlwes_pgdata:

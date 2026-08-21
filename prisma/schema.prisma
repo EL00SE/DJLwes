@@ -1,0 +1,131 @@
+// Prisma schema for the DJ Lwes / Etfe El Boiler ticketing site.
+// Run `npx prisma migrate dev` after setting DATABASE_URL to apply this.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A single event (party). Only one event should be marked `isActive` at a
+/// time — that's the one shown on the homepage. Everything else shows up
+/// under "Past Events" once its date has passed.
+model Event {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  date        DateTime
+  location    String
+  coverImage  String
+  isActive    Boolean  @default(false)
+
+  ticketTypes TicketType[]
+  galleryItems GalleryItem[]
+  orders      Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([date])
+}
+
+/// A tier of ticket for an event (e.g. "Early Bird", "General Admission").
+/// `quantityRemaining` is decremented atomically when an order is paid.
+model TicketType {
+  id                String @id @default(cuid())
+  eventId           String
+  name              String
+  description       String?
+  priceCents        Int
+  quantityTotal     Int
+  quantityRemaining Int
+
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+enum GalleryItemType {
+  IMAGE
+  VIDEO
+}
+
+/// A photo or video shown in the past-events gallery for a given event.
+model GalleryItem {
+  id      String          @id @default(cuid())
+  eventId String
+  type    GalleryItemType
+  url     String
+  caption String?
+  sortOrder Int           @default(0)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  /// Paid on PayPal but couldn't be fulfilled (lost a race for the last
+  /// ticket) and the automatic refund attempt itself failed — needs a
+  /// human to refund manually.
+  FAILED
+  /// Paid on PayPal but couldn't be fulfilled, and was successfully
+  /// refunded automatically.
+  REFUNDED
+}
+
+/// One checkout attempt/purchase. Created as PENDING when the buyer starts
+/// checkout, then flipped to PAID once their PayPal order is captured
+/// (ticket quantities are only decremented at that point).
+model Order {
+  id            String      @id @default(cuid())
+  eventId       String
+  customerName  String
+  customerEmail String
+  status        OrderStatus @default(PENDING)
+
+  paypalOrderId   String? @unique
+  paypalCaptureId String? @unique
+
+  totalCents Int
+
+  event Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([customerEmail])
+}
+
+/// A line item within an order — a quantity of one ticket type, at the
+/// price it was purchased at (kept separately from TicketType.priceCents
+/// in case the price changes later).
+model OrderItem {
+  id           String @id @default(cuid())
+  orderId      String
+  ticketTypeId String
+  quantity     Int
+  unitPriceCents Int
+
+  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+
+  @@index([orderId])
+  @@index([ticketTypeId])
+}
