@@ -14,7 +14,11 @@ export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg/80 backdrop-blur-md">
+    // Sticky only from `lg:` up. Below that, the header scrolls away with
+    // the page instead of floating — the buy panel's "center of viewport"
+    // scroll (see EventExperience) would otherwise be centering against a
+    // viewport height that a persistent header is quietly eating into.
+    <header className="top-0 z-40 border-b border-line bg-bg/80 backdrop-blur-md lg:sticky">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
         <Link href="/" className="group flex items-center gap-3">
           <span className="relative block h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-line-strong transition-shadow group-hover:shadow-[0_0_18px_-2px_var(--color-accent)]">
