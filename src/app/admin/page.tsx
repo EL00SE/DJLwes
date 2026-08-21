@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { orderWithDetailsInclude } from "@/lib/orders";
@@ -78,6 +79,21 @@ export default async function AdminPage() {
             Log out
           </button>
         </form>
+      </div>
+
+      <div className="card-edge mb-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line p-6">
+        <div>
+          <p className="font-display text-2xl tracking-wide text-ink">Events</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            Edit the current event&apos;s text and photo, mark a different one live, or add the next one.
+          </p>
+        </div>
+        <Link
+          href="/admin/events"
+          className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
+        >
+          Manage Events →
+        </Link>
       </div>
 
       <h2 className="mb-4 font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">

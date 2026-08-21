@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { cookies } from "next/headers";
 
 // A single shared password for the business owner — no per-person
 // accounts. Fine for one admin; revisit (real auth) if that changes.
@@ -47,4 +48,13 @@ export function isValidSessionToken(token: string | undefined): boolean {
   const b = Buffer.from(expected);
   if (a.length !== b.length) return false;
   return timingSafeEqual(a, b);
+}
+
+/** Same check as requireAdmin(), but returns a boolean instead of
+ * redirecting — for API routes (upload, event editor) called via fetch
+ * from client components, where a 30x redirect isn't a meaningful
+ * response and the caller needs to render its own "logged out" state. */
+export async function isAdminRequest(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return isValidSessionToken(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
 }
