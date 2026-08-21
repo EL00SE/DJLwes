@@ -98,9 +98,9 @@ Visit [http://localhost:3000](http://localhost:3000). Clicking "Continue to Paym
 ## Deployment (Vercel)
 
 1. Push this repo to GitHub and import it into [Vercel](https://vercel.com/new).
-2. Add the same environment variables from `.env` in the Vercel project settings (point `DATABASE_URL` at your production Postgres and `NEXT_PUBLIC_SITE_URL` at your production domain).
+2. Add `DATABASE_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, and `PAYPAL_ENV` in the Vercel project settings (point `DATABASE_URL` at your production Postgres). `NEXT_PUBLIC_SITE_URL` doesn't need to be set on Vercel — it auto-detects the deployment's own domain (see [src/lib/site-config.ts](src/lib/site-config.ts)); only set it if you want to force a custom domain before it's attached.
 3. Run `npm run db:migrate` (or `npx prisma migrate deploy`) against the production database once, then `npm run db:seed` to load your real event data.
-4. Create a **live** PayPal app at [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live), and set `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` to its live credentials and `PAYPAL_ENV=live` in Vercel when you're ready to take real payments.
+4. Create a **live** PayPal app at [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live), and set `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` to its live credentials and `PAYPAL_ENV=live` in Vercel when you're ready to take real payments. Until then, leaving it on `sandbox` is deliberate for a public demo link — it lets visitors run through a full checkout without real charges.
 
 ## Project structure
 
