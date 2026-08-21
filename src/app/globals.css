@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------- *
+ * DJ Lwes / Etfe El Boiler — dark, underground deep-house design system.
+ * ---------------------------------------------------------------------- */
+@theme {
+  --color-bg: #08060d;
+  --color-bg-raised: #120b1c;
+  --color-bg-raised-2: #1a1226;
+  --color-ink: #f5f1fb;
+  --color-ink-muted: #ab9fc7;
+  --color-ink-faint: #6d6088;
+  --color-line: #2a2038;
+  --color-line-strong: #453260;
+  --color-accent: #b13bff;
+  --color-accent-bright: #d287ff;
+  --color-accent-dim: #5c2688;
+  --color-magenta: #ff3fb0;
+  --color-mint: #4dffc3;
+
+  --font-display: "Bebas Neue", "Arial Narrow", sans-serif;
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* thin neon scrollbar */
+* {
+  scrollbar-color: var(--color-accent-dim) transparent;
+  scrollbar-width: thin;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent-dim);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Fixed film-grain overlay for texture, sits above the background gradients
+   but below content. Keeps the flat black from feeling too "digital". */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Soft ambient glow field used behind hero sections */
+.glow-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.glow-field::before,
+.glow-field::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(90px);
+  opacity: 0.35;
+}
+.glow-field::before {
+  width: 32rem;
+  height: 32rem;
+  top: -10rem;
+  left: -8rem;
+  background: var(--color-accent);
+}
+.glow-field::after {
+  width: 26rem;
+  height: 26rem;
+  bottom: -8rem;
+  right: -6rem;
+  background: var(--color-magenta);
+  opacity: 0.22;
+}
+
+/* Faint dot grid, used as a base texture on dark sections */
+.dot-grid {
+  background-image: radial-gradient(var(--color-line-strong) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.text-glow {
+  text-shadow:
+    0 0 18px color-mix(in oklab, var(--color-accent) 70%, transparent),
+    0 0 46px color-mix(in oklab, var(--color-accent) 35%, transparent);
+}
+
+.card-edge {
+  border: 1px solid var(--color-line);
+  background: linear-gradient(180deg, var(--color-bg-raised) 0%, var(--color-bg-raised-2) 100%);
+}
+
+/* Ticket-stub notches: cuts two half-circle "punch holes" out of the left
+   edge of a ticket card using a radial-gradient mask. */
+.ticket-notch {
+  position: relative;
+}
+.ticket-notch::before {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  transform: translateY(-50%);
+}

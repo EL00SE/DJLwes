@@ -1,0 +1,184 @@
+"use client";
+
+import { forwardRef, useMemo, useState } from "react";
+import { formatPrice } from "@/lib/format";
+import type { TicketTypeSummary } from "@/components/ticket-type-card";
+
+export const BuyPanel = forwardRef<
+  HTMLDivElement,
+  {
+    eventId: string;
+    eventTitle: string;
+    ticketTypes: TicketTypeSummary[];
+    selectedTicketTypeId: string | null;
+    onSelectTicketType: (id: string) => void;
+  }
+>(function BuyPanel(
+  { eventId, eventTitle, ticketTypes, selectedTicketTypeId, onSelectTicketType },
+  ref
+) {
+  const [quantity, setQuantity] = useState(1);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectedTicketType = useMemo(
+    () => ticketTypes.find((t) => t.id === selectedTicketTypeId) ?? null,
+    [ticketTypes, selectedTicketTypeId]
+  );
+
+  const maxQuantity = selectedTicketType ? Math.min(10, selectedTicketType.quantityRemaining) : 1;
+  const total = selectedTicketType ? selectedTicketType.priceCents * quantity : 0;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedTicketType) {
+      setError("Pick a ticket type to continue.");
+      return;
+    }
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          ticketTypeId: selectedTicketType.id,
+          quantity,
+          name,
+          email,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? "Something went wrong. Please try again.");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="card-edge sticky top-24 rounded-3xl border border-line p-6 shadow-[0_0_60px_-25px_rgba(177,59,255,0.6)] sm:p-8"
+    >
+      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent-bright">
+        Get tickets
+      </p>
+      <h2 className="mt-1 font-display text-3xl tracking-wide text-ink">{eventTitle}</h2>
+
+      {!selectedTicketType ? (
+        <p className="mt-6 text-sm text-ink-muted">
+          Select a ticket type on the left to get started.
+        </p>
+      ) : (
+        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+          <div className="flex items-center justify-between rounded-2xl border border-line bg-bg/60 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-ink">{selectedTicketType.name}</p>
+              <p className="font-mono text-xs text-ink-faint">
+                {formatPrice(selectedTicketType.priceCents)} each
+              </p>
+            </div>
+            {ticketTypes.length > 1 && (
+              <div className="flex flex-wrap justify-end gap-1">
+                {ticketTypes.map((t) => (
+                  <button
+                    type="button"
+                    key={t.id}
+                    onClick={() => onSelectTicketType(t.id)}
+                    className={`rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide transition-colors ${
+                      t.id === selectedTicketType.id
+                        ? "bg-accent-dim text-accent-bright"
+                        : "text-ink-faint hover:text-ink-muted"
+                    }`}
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+              Quantity
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="h-9 w-9 rounded-full border border-line-strong text-ink transition-colors hover:border-accent hover:text-accent-bright"
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <span className="w-6 text-center font-display text-xl">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                className="h-9 w-9 rounded-full border border-line-strong text-ink transition-colors hover:border-accent hover:text-accent-bright"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+              Full name
+            </span>
+            <input
+              required
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+              Email
+            </span>
+            <input
+              required
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+            />
+          </label>
+
+          <div className="flex items-center justify-between border-t border-line pt-4">
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
+              Total
+            </span>
+            <span className="font-display text-3xl text-ink">{formatPrice(total)}</span>
+          </div>
+
+          {error && <p className="text-sm text-magenta">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {isSubmitting ? "Redirecting to payment…" : "Continue to Payment"}
+          </button>
+          <p className="text-center font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
+            Secure checkout powered by Stripe
+          </p>
+        </form>
+      )}
+    </div>
+  );
+});
