@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { getActiveEvent } from "@/lib/data";
 import { EventHero } from "@/components/event-hero";
-// EventExperience (the instant-PayPal-purchase flow) is kept in the repo,
-// unused, in favor of the request-based flow below — see
-// guest-request-experience.tsx for why.
-import { GuestRequestExperience } from "@/components/guest-request-experience";
+// This is the "CV showcase" branch: the live flow here is the original
+// instant-purchase PayPal checkout (order creation, capture, webhook,
+// admin approval) rather than the Grow-based guest-request flow used on
+// main — see the root README/commit history for why they diverged.
+// GuestRequestExperience is kept in the repo, unused, in case this branch
+// ever needs to demo that flow too.
+import { EventExperience } from "@/components/event-experience";
 import { siteConfig } from "@/lib/site-config";
 
 // Ticket availability must always be fresh — never statically cached.
@@ -44,7 +47,7 @@ export default async function HomePage() {
         location={event.location}
         coverImage={event.coverImage}
       />
-      <GuestRequestExperience
+      <EventExperience
         eventId={event.id}
         eventTitle={event.title}
         ticketTypes={event.ticketTypes}
