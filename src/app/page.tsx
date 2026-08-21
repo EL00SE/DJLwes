@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { getActiveEvent } from "@/lib/data";
 import { EventHero } from "@/components/event-hero";
-// EventExperience (the instant-PayPal-purchase flow) is kept in the repo,
-// unused, in favor of the request-based flow below — see
-// guest-request-experience.tsx for why.
-import { GuestRequestExperience } from "@/components/guest-request-experience";
+// Both the instant-PayPal-purchase flow (EventExperience) and the
+// free-request-then-approve flow (GuestRequestExperience) are kept in the
+// repo, unused — ticket buying is now a single link out to a Grow-hosted
+// checkout page (Grow owns pricing/quantity/invoicing from here), set per
+// event in /admin/events. See buy-tickets-section.tsx.
+import { BuyTicketsSection } from "@/components/buy-tickets-section";
 import { siteConfig } from "@/lib/site-config";
 
 // Ticket availability must always be fresh — never statically cached.
@@ -44,11 +46,7 @@ export default async function HomePage() {
         location={event.location}
         coverImage={event.coverImage}
       />
-      <GuestRequestExperience
-        eventId={event.id}
-        eventTitle={event.title}
-        ticketTypes={event.ticketTypes}
-      />
+      <BuyTicketsSection buyLink={event.buyLink} />
     </div>
   );
 }

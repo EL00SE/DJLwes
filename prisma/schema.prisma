@@ -23,6 +23,11 @@ model Event {
   coverImage  String
   isActive    Boolean  @default(false)
 
+  /// External checkout link for this event (a Grow-hosted payment page —
+  /// Grow owns pricing/quantity/invoicing from here). Null until the admin
+  /// sets one; the homepage shows a disabled "coming soon" button until then.
+  buyLink String?
+
   ticketTypes   TicketType[]
   galleryItems  GalleryItem[]
   orders        Order[]

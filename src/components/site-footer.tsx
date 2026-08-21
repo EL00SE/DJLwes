@@ -9,7 +9,7 @@ export function SiteFooter() {
           {siteConfig.eventSeriesName}
         </p>
         <p className="font-mono text-xs uppercase tracking-[0.2em]">
-          Every request reviewed before you pay
+          Tickets sold securely via Grow
         </p>
       </div>
     </footer>
