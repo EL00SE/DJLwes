@@ -8,10 +8,11 @@ Dark, underground deep-house visual identity — neon violet glow, film grain, t
 
 ## Screenshots
 
-_Add screenshots here once you've run the app locally (see [Setup](#setup) below) — e.g. `npm run dev`, visit `http://localhost:3000`, and drop images into a `docs/screenshots` folder:_
+_Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `docs/screenshots` folder (real event content is already seeded, so these can be the real thing rather than placeholders):_
 
 - Current event page (hero, tickets, buy panel)
-- Buy panel open on mobile (stacked + auto-scroll)
+- Buy panel open on mobile — centered in the viewport, header scrolled out of the way
+- The hamburger nav open on a small screen
 - Past events gallery
 - Checkout confirmation
 
@@ -19,10 +20,11 @@ _Add screenshots here once you've run the app locally (see [Setup](#setup) below
 
 - **Current event page** — title, description, date/time, location, cover image, and live ticket types with remaining quantity
 - **Past events gallery** — grid of photos/video per past event
-- **Buy flow** — clicking "Buy" opens a ticket panel (side-by-side on desktop, stacked with auto-scroll on mobile) to collect name, email, and quantity
+- **Buy flow** — clicking "Buy" opens a ticket panel: side-by-side on desktop, or on mobile the page smooth-scrolls to center the form in the viewport (the header un-stickies below `lg:` specifically so this centers against the *true* visible viewport, not one a floating header is eating into)
 - **Checkout** — PayPal Checkout (sandbox/test mode) for payment
 - **Confirmation** — order summary shown after a successful purchase
-- **Inventory safety** — ticket quantities are decremented atomically on payment, guarding against overselling
+- **Inventory safety** — ticket quantities are decremented atomically on payment, so two buyers can never both win the same last ticket. If a buyer loses that race *after* paying, they're automatically refunded in full rather than left charged with nothing — see [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts) and the verification script at [scripts/test-oversell-race.ts](scripts/test-oversell-race.ts), which simulates two concurrent buyers racing for the last ticket against a real database
+- **Responsive down to 320px** — hamburger nav below `sm:`, 44px touch targets on buy controls, no horizontal overflow anywhere in the range, audited from a 320px phone up through 2560px ultra-wide
 
 ## Tech stack
 
@@ -105,17 +107,30 @@ Visit [http://localhost:3000](http://localhost:3000). Clicking "Continue to Paym
 ```
 src/
   app/
-    page.tsx                 Current event page
-    past-events/page.tsx     Past events gallery
+    page.tsx                   Current event page
+    past-events/page.tsx       Past events gallery
     checkout/success/page.tsx  Captures the PayPal order, shows confirmation
-    api/checkout/route.ts    Creates the PayPal order
-  components/                 UI building blocks (hero, ticket cards, buy panel, gallery)
-  lib/                        Prisma client, PayPal client, data access, formatting
+    api/checkout/route.ts      Creates the PayPal order
+    icon.png, apple-icon.png   Favicon / touch icon, generated from the brand logo
+  components/
+    site-header.tsx            Sticky (lg:+) / scrolls-away (below lg:) header with hamburger nav
+    event-hero.tsx             Title/date/location/cover image
+    event-experience.tsx       Ticket list + buy panel; owns selection state and scroll-to-center
+    buy-panel.tsx              Name/email/quantity form, talks to /api/checkout
+    ticket-type-card.tsx       One ticket row
+    past-event-section.tsx     One past event's block in the gallery
+  lib/
+    prisma.ts                  Prisma client singleton
+    paypal.ts                  PayPal Orders v2 REST client (create/get/capture/refund), plain fetch
+    fulfill-order.ts           Marks an order PAID + decrements inventory, or refunds on a lost race
+    data.ts                    getActiveEvent / getPastEvents
+    format.ts, site-config.ts  Formatting helpers, brand constants
 prisma/
-  schema.prisma               Event / TicketType / GalleryItem / Order / OrderItem
-  seed.ts                     Manual event data (no admin panel yet)
+  schema.prisma                 Event / TicketType / GalleryItem / Order / OrderItem
+  seed.ts                       Manual event data (no admin panel yet)
 scripts/
   generate-placeholder-art.mjs  Regenerates the placeholder cover/gallery art
+  test-oversell-race.ts         Verifies the last-ticket race condition against a real database
 ```
 
 ## Planned features
