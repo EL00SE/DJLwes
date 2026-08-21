@@ -23,9 +23,10 @@ model Event {
   coverImage  String
   isActive    Boolean  @default(false)
 
-  ticketTypes TicketType[]
-  galleryItems GalleryItem[]
-  orders      Order[]
+  ticketTypes   TicketType[]
+  galleryItems  GalleryItem[]
+  orders        Order[]
+  guestRequests GuestRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -145,6 +146,52 @@ model WebhookLog {
   verified       Boolean
   detail         String
   createdAt      DateTime @default(now())
+}
+
+enum GuestRequestStatus {
+  PENDING
+  /// Approved in /admin. A Grow payment link should have been generated
+  /// and sent — see growPaymentLinkUrl/growPaymentLinkSentAt. Payment
+  /// itself, and invoicing, happen entirely on Grow's side from here.
+  APPROVED
+  DECLINED
+}
+
+/// The "guest list" request flow: a customer asks to attend (with a
+/// headcount broken down by gender, since door policy/pricing here
+/// depends on that) before any payment happens. The business owner vets
+/// and approves/declines in /admin; approving sends the guest a Grow
+/// payment link, and Grow handles collecting payment and issuing real
+/// invoices to both the guest and the business — this app never touches
+/// money for this flow the way it does for Order/PayPal.
+model GuestRequest {
+  id      String @id @default(cuid())
+  eventId String
+
+  customerName      String
+  customerInstagram String
+  /// Required — this is what Grow uses to deliver the payment link.
+  customerPhone String
+  customerEmail String?
+
+  maleCount   Int @default(0)
+  femaleCount Int @default(0)
+  otherCount  Int @default(0)
+
+  status GuestRequestStatus @default(PENDING)
+
+  /// Set once a Grow payment link has actually been created + sent for
+  /// this request (on approval). Null until that integration is wired up.
+  growPaymentLinkUrl    String?
+  growPaymentLinkSentAt DateTime?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([status])
 }
 
 /// A line item within an order — a quantity of one ticket type, at the
