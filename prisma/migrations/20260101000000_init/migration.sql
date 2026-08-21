@@ -58,8 +58,8 @@ CREATE TABLE "Order" (
     "customerName" TEXT NOT NULL,
     "customerEmail" TEXT NOT NULL,
     "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
-    "stripeCheckoutSessionId" TEXT,
-    "stripePaymentIntentId" TEXT,
+    "paypalOrderId" TEXT,
+    "paypalCaptureId" TEXT,
     "totalCents" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -94,10 +94,10 @@ CREATE INDEX "TicketType_eventId_idx" ON "TicketType"("eventId");
 CREATE INDEX "GalleryItem_eventId_idx" ON "GalleryItem"("eventId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Order_stripeCheckoutSessionId_key" ON "Order"("stripeCheckoutSessionId");
+CREATE UNIQUE INDEX "Order_paypalOrderId_key" ON "Order"("paypalOrderId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Order_stripePaymentIntentId_key" ON "Order"("stripePaymentIntentId");
+CREATE UNIQUE INDEX "Order_paypalCaptureId_key" ON "Order"("paypalCaptureId");
 
 -- CreateIndex
 CREATE INDEX "Order_eventId_idx" ON "Order"("eventId");

@@ -83,8 +83,8 @@ enum OrderStatus {
 }
 
 /// One checkout attempt/purchase. Created as PENDING when the buyer starts
-/// checkout, then flipped to PAID by the Stripe webhook once payment
-/// succeeds (ticket quantities are only decremented at that point).
+/// checkout, then flipped to PAID once their PayPal order is captured
+/// (ticket quantities are only decremented at that point).
 model Order {
   id            String      @id @default(cuid())
   eventId       String
@@ -92,8 +92,8 @@ model Order {
   customerEmail String
   status        OrderStatus @default(PENDING)
 
-  stripeCheckoutSessionId String? @unique
-  stripePaymentIntentId   String? @unique
+  paypalOrderId   String? @unique
+  paypalCaptureId String? @unique
 
   totalCents Int
 

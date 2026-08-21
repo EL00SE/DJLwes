@@ -175,7 +175,7 @@ export const BuyPanel = forwardRef<
             {isSubmitting ? "Redirecting to payment…" : "Continue to Payment"}
           </button>
           <p className="text-center font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-            Secure checkout powered by Stripe
+            Secure checkout powered by PayPal
           </p>
         </form>
       )}

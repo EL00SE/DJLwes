@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
+import { createPayPalOrder, findApproveLink } from "@/lib/paypal";
 import { siteConfig } from "@/lib/site-config";
 
 const checkoutSchema = z.object({
@@ -69,38 +69,29 @@ export async function POST(request: Request) {
   const siteUrl = siteConfig.siteUrl.replace(/\/$/, "");
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer_email: email,
-      client_reference_id: order.id,
-      line_items: [
-        {
-          quantity,
-          price_data: {
-            currency: "usd",
-            unit_amount: ticketType.priceCents,
-            product_data: {
-              name: `${ticketType.event.title} — ${ticketType.name}`,
-              description: `${quantity} × ${ticketType.name}`,
-            },
-          },
-        },
-      ],
-      success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/?checkout=canceled`,
-      metadata: { orderId: order.id },
+    const paypalOrder = await createPayPalOrder({
+      referenceId: order.id,
+      description: `${ticketType.event.title} — ${quantity} × ${ticketType.name}`,
+      amountCents: totalCents,
+      returnUrl: `${siteUrl}/checkout/success?orderId=${order.id}`,
+      cancelUrl: `${siteUrl}/?checkout=canceled`,
     });
+
+    const approveUrl = findApproveLink(paypalOrder);
+    if (!approveUrl) {
+      throw new Error("PayPal order response had no approve link");
+    }
 
     await prisma.order.update({
       where: { id: order.id },
-      data: { stripeCheckoutSessionId: session.id },
+      data: { paypalOrderId: paypalOrder.id },
     });
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: approveUrl });
   } catch (error) {
-    // Roll back the pending order so it doesn't linger if Stripe fails.
+    // Roll back the pending order so it doesn't linger if PayPal fails.
     await prisma.order.delete({ where: { id: order.id } }).catch(() => {});
-    console.error("Stripe checkout session creation failed:", error);
+    console.error("PayPal order creation failed:", error);
     return NextResponse.json(
       { error: "Could not start checkout. Please try again." },
       { status: 502 }

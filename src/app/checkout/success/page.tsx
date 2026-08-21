@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { fulfillOrderFromSession } from "@/lib/fulfill-order";
+import { capturePayPalOrder } from "@/lib/paypal";
+import { fulfillOrder } from "@/lib/fulfill-order";
 import { formatPrice } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -24,42 +24,24 @@ function FailureState({ heading, message }: { heading: string; message: string }
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session_id?: string }>;
+  // PayPal appends `token` (its order id) and `PayerID` to whatever
+  // return_url we gave it; `orderId` is ours, added when we built that URL.
+  searchParams: Promise<{ orderId?: string; token?: string }>;
 }) {
-  const { session_id: sessionId } = await searchParams;
+  const { orderId } = await searchParams;
 
-  if (!sessionId) {
+  if (!orderId) {
     return (
       <FailureState
         heading="No order found"
-        message="We couldn't find a checkout session to confirm."
+        message="We couldn't find an order to confirm."
       />
     );
   }
 
-  let session;
-  try {
-    session = await stripe.checkout.sessions.retrieve(sessionId);
-  } catch {
-    return (
-      <FailureState
-        heading="We couldn't confirm that order"
-        message="The checkout session link looks invalid or has expired."
-      />
-    );
-  }
-
-  // Safety net in case the webhook hasn't landed yet — idempotent.
-  await fulfillOrderFromSession(session).catch((err) => {
-    console.error("fulfillOrderFromSession (success page) failed:", err);
-  });
-
-  const order = await prisma.order.findUnique({
-    where: { stripeCheckoutSessionId: sessionId },
-    include: {
-      event: true,
-      items: { include: { ticketType: true } },
-    },
+  let order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { event: true, items: { include: { ticketType: true } } },
   });
 
   if (!order) {
@@ -71,7 +53,27 @@ export default async function CheckoutSuccessPage({
     );
   }
 
-  if (order.status !== "PAID") {
+  if (order.status === "PENDING" && order.paypalOrderId) {
+    try {
+      const capture = await capturePayPalOrder(order.paypalOrderId);
+      const captureId = capture.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? null;
+      if (capture.status === "COMPLETED") {
+        await fulfillOrder(order.id, captureId);
+      }
+    } catch (err) {
+      // A 422 here usually just means it was already captured (e.g. the
+      // buyer refreshed this page) — fulfillOrder is idempotent either way,
+      // so only log unexpected failures rather than surfacing an error.
+      console.error("PayPal capture failed:", err);
+    }
+    // Re-fetch (with relations) since fulfillOrder may have changed the status.
+    order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { event: true, items: { include: { ticketType: true } } },
+    });
+  }
+
+  if (!order || order.status !== "PAID") {
     return (
       <FailureState
         heading="Payment still processing"
