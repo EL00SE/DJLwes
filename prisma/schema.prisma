@@ -134,6 +134,19 @@ model Order {
   @@index([customerEmail])
 }
 
+/// Records every incoming PayPal webhook request, verified or not. Exists
+/// because this app has no access to Vercel's own request logs — this is
+/// the only way to see, after the fact, exactly what PayPal's signature
+/// verification API actually said about a real delivery.
+model WebhookLog {
+  id             String   @id @default(cuid())
+  eventType      String?
+  transmissionId String?
+  verified       Boolean
+  detail         String
+  createdAt      DateTime @default(now())
+}
+
 /// A line item within an order — a quantity of one ticket type, at the
 /// price it was purchased at (kept separately from TicketType.priceCents
 /// in case the price changes later).

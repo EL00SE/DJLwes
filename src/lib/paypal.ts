@@ -142,7 +142,7 @@ export async function verifyWebhookSignature(params: {
   transmissionTime: string;
   webhookId: string;
   webhookEvent: unknown;
-}): Promise<boolean> {
+}): Promise<string> {
   const data = await paypalFetch("/v1/notifications/verify-webhook-signature", {
     method: "POST",
     body: JSON.stringify({
@@ -155,5 +155,8 @@ export async function verifyWebhookSignature(params: {
       webhook_event: params.webhookEvent,
     }),
   });
-  return data.verification_status === "SUCCESS";
+  // Raw status string ("SUCCESS" / "FAILURE") rather than a boolean, so
+  // callers can log exactly what PayPal said rather than just yes/no —
+  // there's no other way to see this after the fact (see WebhookLog).
+  return data.verification_status as string;
 }

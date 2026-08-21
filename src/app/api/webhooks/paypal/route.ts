@@ -61,9 +61,9 @@ export async function POST(request: Request) {
   // Verify with PayPal that this request genuinely came from them before
   // trusting anything in the body — otherwise anyone could POST a forged
   // "payment completed" event straight at this endpoint.
-  let verified = false;
+  let verificationStatus: string;
   try {
-    verified = await verifyWebhookSignature({
+    verificationStatus = await verifyWebhookSignature({
       authAlgo,
       certUrl,
       transmissionId,
@@ -73,9 +73,25 @@ export async function POST(request: Request) {
       webhookEvent: event,
     });
   } catch (err) {
-    console.error("PayPal webhook signature verification request failed:", err);
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("PayPal webhook signature verification request failed:", detail);
+    await prisma.webhookLog
+      .create({ data: { eventType: event.event_type, transmissionId, verified: false, detail } })
+      .catch(() => {});
     return NextResponse.json({ error: "Verification failed" }, { status: 400 });
   }
+
+  const verified = verificationStatus === "SUCCESS";
+  const log = await prisma.webhookLog
+    .create({
+      data: {
+        eventType: event.event_type,
+        transmissionId,
+        verified,
+        detail: `verification_status=${verificationStatus}`,
+      },
+    })
+    .catch(() => null);
 
   if (!verified) {
     console.error("PayPal webhook signature verification returned FAILURE — rejecting.", {
@@ -94,7 +110,9 @@ export async function POST(request: Request) {
   ) {
     const orderId = await resolveOrderId(resource);
     if (!orderId) {
-      console.error(`PayPal webhook ${eventType} — couldn't resolve an order for capture ${resource.id}.`);
+      const detail = `couldn't resolve an order for capture ${resource.id} (custom_id=${resource.custom_id ?? "none"})`;
+      console.error(`PayPal webhook ${eventType} — ${detail}`);
+      if (log) await prisma.webhookLog.update({ where: { id: log.id }, data: { detail } }).catch(() => {});
       // Still 200 — this isn't a signature/retry problem, just an event
       // we can't act on (e.g. a capture from before custom_id existed).
       return NextResponse.json({ received: true });
@@ -106,8 +124,15 @@ export async function POST(request: Request) {
       } else {
         await markOrderRefundedExternally(orderId);
       }
+      if (log) {
+        await prisma.webhookLog
+          .update({ where: { id: log.id }, data: { detail: `processed for order ${orderId}` } })
+          .catch(() => {});
+      }
     } catch (err) {
-      console.error(`Failed to process PayPal webhook ${eventType} for order ${orderId}:`, err);
+      const detail = `processing failed for order ${orderId}: ${err instanceof Error ? err.message : String(err)}`;
+      console.error(`PayPal webhook ${eventType} — ${detail}`);
+      if (log) await prisma.webhookLog.update({ where: { id: log.id }, data: { detail } }).catch(() => {});
       return NextResponse.json({ error: "Processing failed" }, { status: 500 });
     }
   }
