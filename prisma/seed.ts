@@ -23,7 +23,7 @@ async function main() {
       description:
         "DJ Lwes returns to the warehouse for another night of raw underground deep house — low lights, loud subs, no phones on the floor.",
       date: upcomingDate,
-      location: "The Foundry, Beirut",
+      location: "The Foundry, Haifa",
       coverImage: "/images/event-cover-boiler.svg",
       isActive: true,
       ticketTypes: {
@@ -63,7 +63,7 @@ async function main() {
       title: "Etfe El Boiler Vol. 2",
       description: "Sold out warehouse session. Six hours, one room, no breaks.",
       date: pastWarehouseDate,
-      location: "The Foundry, Beirut",
+      location: "The Foundry, Haifa",
       coverImage: "/images/past-warehouse-cover.svg",
       isActive: false,
       galleryItems: {
@@ -85,7 +85,7 @@ async function main() {
       title: "Etfe El Boiler: Rooftop Sessions",
       description: "A sunset-to-sunrise rooftop edition of the party.",
       date: pastRooftopDate,
-      location: "Skyline Terrace, Beirut",
+      location: "Skyline Terrace, Haifa",
       coverImage: "/images/past-rooftop-cover.svg",
       isActive: false,
       galleryItems: {

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { siteConfig } from "@/lib/site-config";
 
@@ -5,12 +6,19 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
-        <Link href="/" className="group flex items-baseline gap-2">
+        <Link href="/" className="group flex items-center gap-3">
+          <span className="relative block h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-line-strong transition-shadow group-hover:shadow-[0_0_18px_-2px_var(--color-accent)]">
+            <Image
+              src="/images/logo.png"
+              alt={siteConfig.eventSeriesName}
+              width={72}
+              height={72}
+              priority
+              className="h-full w-full object-cover"
+            />
+          </span>
           <span className="font-display text-2xl tracking-wide text-ink transition-colors group-hover:text-accent-bright">
             {siteConfig.djName.toUpperCase()}
-          </span>
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.25em] text-ink-faint sm:inline">
-            {siteConfig.eventSeriesName}
           </span>
         </Link>
 
