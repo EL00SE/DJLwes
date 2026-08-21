@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
 import { fulfillOrder } from "@/lib/fulfill-order";
+import { sendTicketConfirmation } from "@/lib/notify";
 import { formatPrice } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -109,6 +110,23 @@ export default async function CheckoutSuccessPage({
     );
   }
 
+  if (!order.confirmationSentAt) {
+    try {
+      await sendTicketConfirmation(order);
+      order = await prisma.order.update({
+        where: { id: order.id },
+        data: { confirmationSentAt: new Date() },
+        include: { event: true, items: { include: { ticketType: true } } },
+      });
+    } catch (err) {
+      // Don't fail the confirmation page over a delivery hiccup — the
+      // payment already succeeded. Logged for follow-up; the order stays
+      // eligible to retry next page load since confirmationSentAt is
+      // only set on success.
+      console.error(`Failed to send ticket confirmation for order ${order.id}:`, err);
+    }
+  }
+
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-6 px-5 py-24 text-center">
       <div className="glow-field pointer-events-none absolute" />
@@ -117,8 +135,16 @@ export default async function CheckoutSuccessPage({
         Tickets Confirmed
       </h1>
       <p className="text-ink-muted">
-        Booked under <span className="text-ink">{order.customerEmail}</span> — save this page as
-        your confirmation.
+        {order.customerEmail ? (
+          <>
+            Sent to <span className="text-ink">{order.customerEmail}</span>
+          </>
+        ) : (
+          <>
+            Sent via WhatsApp to <span className="text-ink">{order.customerPhone}</span>
+          </>
+        )}{" "}
+        — save this page as your confirmation too.
       </p>
 
       <div className="card-edge mt-4 w-full rounded-3xl border border-line p-6 text-left sm:p-8">

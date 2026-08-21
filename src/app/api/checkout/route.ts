@@ -4,13 +4,26 @@ import { prisma } from "@/lib/prisma";
 import { createPayPalOrder, findApproveLink } from "@/lib/paypal";
 import { siteConfig } from "@/lib/site-config";
 
-const checkoutSchema = z.object({
-  eventId: z.string().min(1),
-  ticketTypeId: z.string().min(1),
-  quantity: z.number().int().min(1).max(10),
-  name: z.string().trim().min(1, "Name is required").max(200),
-  email: z.string().trim().email("A valid email is required"),
-});
+const PHONE_PATTERN = /^\+?[0-9\s\-()]{7,20}$/;
+
+const checkoutSchema = z
+  .object({
+    eventId: z.string().min(1),
+    ticketTypeId: z.string().min(1),
+    quantity: z.number().int().min(1).max(10),
+    name: z.string().trim().min(1, "Name is required").max(200),
+    contactMethod: z.enum(["EMAIL", "WHATSAPP"]),
+    email: z.string().trim().email("A valid email is required").optional().or(z.literal("")),
+    phone: z.string().trim().regex(PHONE_PATTERN, "A valid phone number is required").optional().or(z.literal("")),
+  })
+  .superRefine((data, ctx) => {
+    if (data.contactMethod === "EMAIL" && !data.email) {
+      ctx.addIssue({ code: "custom", path: ["email"], message: "Email is required" });
+    }
+    if (data.contactMethod === "WHATSAPP" && !data.phone) {
+      ctx.addIssue({ code: "custom", path: ["phone"], message: "Phone number is required" });
+    }
+  });
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -27,7 +40,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { eventId, ticketTypeId, quantity, name, email } = parsed.data;
+  const { eventId, ticketTypeId, quantity, name, contactMethod, email, phone } = parsed.data;
 
   const ticketType = await prisma.ticketType.findUnique({
     where: { id: ticketTypeId },
@@ -53,7 +66,8 @@ export async function POST(request: Request) {
     data: {
       eventId,
       customerName: name,
-      customerEmail: email,
+      customerEmail: contactMethod === "EMAIL" ? email : null,
+      customerPhone: contactMethod === "WHATSAPP" ? phone : null,
       status: "PENDING",
       totalCents,
       items: {

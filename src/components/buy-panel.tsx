@@ -21,7 +21,9 @@ export function BuyPanel({
 }) {
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState("");
+  const [contactMethod, setContactMethod] = useState<"EMAIL" | "WHATSAPP">("EMAIL");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +52,9 @@ export function BuyPanel({
           ticketTypeId: selectedTicketType.id,
           quantity,
           name,
+          contactMethod,
           email,
+          phone,
         }),
       });
       const data = await res.json();
@@ -147,19 +151,63 @@ export function BuyPanel({
               />
             </label>
 
-            <label className="flex flex-col gap-1.5 text-sm">
+            <div className="flex flex-col gap-1.5 text-sm">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
-                Email
+                Send my ticket via
               </span>
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
-              />
-            </label>
+              <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-bg/60 p-1">
+                {(
+                  [
+                    { value: "EMAIL", label: "Email" },
+                    { value: "WHATSAPP", label: "WhatsApp" },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setContactMethod(option.value)}
+                    aria-pressed={contactMethod === option.value}
+                    className={`rounded-lg py-2 font-mono text-xs uppercase tracking-[0.1em] transition-colors ${
+                      contactMethod === option.value
+                        ? "bg-accent text-white"
+                        : "text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {contactMethod === "EMAIL" ? (
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+                  Email
+                </span>
+                <input
+                  required
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                />
+              </label>
+            ) : (
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+                  WhatsApp number
+                </span>
+                <input
+                  required
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+972 50 123 4567"
+                  className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                />
+              </label>
+            )}
           </div>
 
           <div className="flex items-center justify-between border-t border-line pt-4">

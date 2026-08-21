@@ -92,11 +92,22 @@ enum OrderStatus {
 /// checkout, then flipped to PAID once their PayPal order is captured
 /// (ticket quantities are only decremented at that point).
 model Order {
-  id            String      @id @default(cuid())
-  eventId       String
-  customerName  String
-  customerEmail String
-  status        OrderStatus @default(PENDING)
+  id           String @id @default(cuid())
+  eventId      String
+  customerName String
+
+  /// Exactly one of these is set — the buyer picks email or WhatsApp as
+  /// their delivery method at checkout (enforced in the API route and by
+  /// a DB check constraint in the migration, since Prisma has no native
+  /// "at least one of" column constraint).
+  customerEmail String?
+  customerPhone String?
+
+  status OrderStatus @default(PENDING)
+
+  /// Set once the order-confirmation email/WhatsApp message has actually
+  /// been sent, so a refreshed success page doesn't resend it.
+  confirmationSentAt DateTime?
 
   paypalOrderId   String? @unique
   paypalCaptureId String? @unique
