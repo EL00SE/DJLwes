@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refundPayPalCapture } from "@/lib/paypal";
 import { sendTicketConfirmation } from "@/lib/notify";
-import { orderWithDetailsInclude } from "@/lib/orders";
+import { claimOrderStatus, orderWithDetailsInclude } from "@/lib/orders";
 import {
   ADMIN_SESSION_COOKIE,
   createSessionToken,
@@ -25,21 +25,6 @@ export async function requireAdmin() {
   if (!isValidSessionToken(token)) {
     redirect("/admin/login");
   }
-}
-
-/**
- * Atomically moves an order from PAID to `nextStatus` — a single
- * conditional UPDATE, so if two admin actions (a double-click, two open
- * tabs) race for the same order, exactly one of them wins this claim and
- * the other sees `false` and bails out immediately. Prevents e.g. Approve
- * and Decline both succeeding for the same order.
- */
-async function claimPaidOrder(orderId: string, nextStatus: "CONFIRMED" | "REFUNDED"): Promise<boolean> {
-  const result = await prisma.order.updateMany({
-    where: { id: orderId, status: "PAID" },
-    data: { status: nextStatus },
-  });
-  return result.count === 1;
 }
 
 export async function loginAdminAction(formData: FormData) {
@@ -68,7 +53,7 @@ export async function logoutAdminAction() {
 export async function confirmOrderAction(orderId: string) {
   await requireAdmin();
 
-  if (!(await claimPaidOrder(orderId, "CONFIRMED"))) {
+  if (!(await claimOrderStatus(orderId, ["PAID"], "CONFIRMED"))) {
     // Already claimed (approved/declined) by a concurrent request.
     revalidatePath("/admin");
     return;
@@ -104,7 +89,7 @@ export async function declineOrderAction(orderId: string) {
   // against a concurrent Approve. Corrected to FAILED below if the refund
   // itself doesn't actually go through, so the DB never reports a refund
   // that didn't happen.
-  if (!(await claimPaidOrder(orderId, "REFUNDED"))) {
+  if (!(await claimOrderStatus(orderId, ["PAID"], "REFUNDED"))) {
     revalidatePath("/admin");
     return;
   }

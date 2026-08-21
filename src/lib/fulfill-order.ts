@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { refundPayPalCapture } from "@/lib/paypal";
+import { claimOrderStatus } from "@/lib/orders";
 
 /** Thrown inside the transaction below to trigger a full rollback — see fulfillOrder. */
 class OversoldError extends Error {}
@@ -85,4 +86,34 @@ export async function fulfillOrder(orderId: string, captureId: string | null) {
   }
 
   return order;
+}
+
+/**
+ * Syncs our records when a refund happens *outside* of /admin's Decline
+ * button — e.g. issued directly from the PayPal dashboard, or a dispute/
+ * chargeback reversal. Called from the PayPal webhook. Marks the order
+ * REFUNDED and puts its ticket(s) back into inventory; does not call
+ * PayPal itself, since by the time this runs PayPal has already told us
+ * the money moved.
+ *
+ * Uses the same atomic claim as admin's decline action, so this is safe
+ * to call concurrently with a /admin Decline (or with itself — PayPal
+ * webhooks are "at least once" delivery, so the same event can arrive
+ * more than once) without double-crediting inventory.
+ */
+export async function markOrderRefundedExternally(orderId: string): Promise<void> {
+  const claimed = await claimOrderStatus(orderId, ["PAID", "CONFIRMED"], "REFUNDED");
+  if (!claimed) return; // not in a refundable state, or another caller already claimed it
+
+  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
+  if (!order) return;
+
+  await prisma.$transaction(async (tx) => {
+    for (const item of order.items) {
+      await tx.ticketType.update({
+        where: { id: item.ticketTypeId },
+        data: { quantityRemaining: { increment: item.quantity } },
+      });
+    }
+  });
 }

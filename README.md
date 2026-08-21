@@ -25,6 +25,8 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 - **Manual approval before tickets go out** — payment is captured immediately, but the buyer's ticket confirmation isn't sent until the business owner approves the order in [`/admin`](#admin-panel). Declining automatically refunds the payment and releases the ticket back into inventory — see [src/app/admin/actions.ts](src/app/admin/actions.ts)
 - **Confirmation** — once approved, a real confirmation is sent to the buyer's choice of email (via [Resend](https://resend.com)) or WhatsApp (via [Meta's WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api)) — see [src/lib/notify.ts](src/lib/notify.ts). This is an order confirmation, not yet a scannable admission ticket — see [Planned features](#planned-features)
 - **Inventory safety** — ticket quantities are decremented atomically on payment, so two buyers can never both win the same last ticket. If a buyer loses that race *after* paying, they're automatically refunded in full rather than left charged with nothing — see [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts) and the verification script at [scripts/test-oversell-race.ts](scripts/test-oversell-race.ts), which simulates two concurrent buyers racing for the last ticket against a real database
+- **Signature-verified PayPal webhook** — payment is captured immediately on the success page as a fast path, but the webhook (verified against PayPal's own API — see [PayPal webhook setup](#paypal-webhook-setup)) is the actual source of truth: it fulfills orders even if the buyer's browser never makes it back to the site, and syncs a refund issued directly from the PayPal dashboard (or a dispute/chargeback) back into this app — releasing the ticket and marking the order REFUNDED without anyone touching `/admin`. See [src/app/api/webhooks/paypal/route.ts](src/app/api/webhooks/paypal/route.ts)
+- **Admin approve/decline is race-safe** — a single atomic conditional update ([src/lib/orders.ts](src/lib/orders.ts)'s `claimOrderStatus`) means a double-click, two open admin tabs, or the webhook and an admin action landing at the same moment can never both "win" the same order
 - **Responsive down to 320px** — hamburger nav below `sm:`, 44px touch targets on buy controls, no horizontal overflow anywhere in the range, audited from a 320px phone up through 2560px ultra-wide
 
 ## Tech stack
@@ -73,6 +75,7 @@ Fill in `.env`:
 | `DATABASE_URL` | Your Postgres connection string (see below) |
 | `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | Create a sandbox app at [developer.paypal.com/dashboard/applications/sandbox](https://developer.paypal.com/dashboard/applications/sandbox) — it gives you both |
 | `PAYPAL_ENV` | Leave as `sandbox` for testing; set to `live` (with live keys) when taking real payments |
+| `PAYPAL_WEBHOOK_ID` | See [PayPal webhook setup](#paypal-webhook-setup) below — the webhook won't function without it |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` for local dev |
 | `RESEND_API_KEY` | [resend.com/api-keys](https://resend.com/api-keys) |
 | `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` | See [WhatsApp setup](#whatsapp-setup) below — optional, only needed if you want WhatsApp delivery working |
@@ -102,6 +105,20 @@ npm run dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000). Clicking "Continue to Payment" redirects to a real PayPal checkout page (sandbox mode, so no real money moves) — log in with a [sandbox test buyer account](https://developer.paypal.com/dashboard/accounts) (created automatically alongside your app) to complete a test purchase.
+
+### PayPal webhook setup
+
+The webhook is what makes fulfillment reliable even when a buyer never makes it back to `/checkout/success` (closed tab, crash, lost connection) — see [Features](#features) above. It needs a public URL, so this only really works once deployed (a local `http://localhost:3000` can't receive webhook deliveries from PayPal).
+
+1. In the [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/), open your app (the same sandbox or live app you got `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` from), scroll to **Webhooks**, and click **Add Webhook**.
+2. Set the URL to `https://<your-domain>/api/webhooks/paypal`.
+3. Subscribe to these events: `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.CAPTURE.REVERSED`.
+4. Save, then copy the **Webhook ID** it generates into `PAYPAL_WEBHOOK_ID`.
+5. Sandbox and live apps each need their own webhook registered separately (same as their API credentials).
+
+Without `PAYPAL_WEBHOOK_ID` set, the endpoint refuses every request (503) rather than silently doing nothing.
+
+**A caveat worth knowing:** PayPal's *sandbox* signature-verification API is known to be more lenient than production — it can return a valid signature for a request that isn't genuinely from PayPal, which makes the "reject a forged webhook" path hard to fully prove out in sandbox specifically (the "reject if headers are missing" and "reject if misconfigured" paths test cleanly either way). This isn't something this codebase can work around — it's PayPal's own sandbox behavior — so treat sandbox webhook testing as proving the *fulfillment logic* works, and trust PayPal's documented signature verification for the actual security guarantee once you're on a live app.
 
 ### WhatsApp setup
 
@@ -133,7 +150,8 @@ There's intentionally no "cancel/undo" on an approval — the confirmation goes 
 1. Push this repo to GitHub and import it into [Vercel](https://vercel.com/new).
 2. Add `DATABASE_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, `RESEND_API_KEY`, and `ADMIN_PASSWORD` (pick a real one — this is a real password on a live site now) in the Vercel project settings (point `DATABASE_URL` at your production Postgres); add `WHATSAPP_ACCESS_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` too if you've done the [WhatsApp setup](#whatsapp-setup). `NEXT_PUBLIC_SITE_URL` doesn't need to be set on Vercel — it auto-detects the deployment's own domain (see [src/lib/site-config.ts](src/lib/site-config.ts)); only set it if you want to force a custom domain before it's attached.
 3. Run `npm run db:migrate` (or `npx prisma migrate deploy`) against the production database once, then `npm run db:seed` to load your real event data.
-4. Create a **live** PayPal app at [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live), and set `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` to its live credentials and `PAYPAL_ENV=live` in Vercel when you're ready to take real payments. Until then, leaving it on `sandbox` is deliberate for a public demo link — it lets visitors run through a full checkout without real charges.
+4. Once you have a real domain, do the [PayPal webhook setup](#paypal-webhook-setup) — it needs a live URL, so this is the one piece that can't be done before the first deploy — and add `PAYPAL_WEBHOOK_ID` to Vercel.
+5. Create a **live** PayPal app at [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live), and set `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` to its live credentials, `PAYPAL_ENV=live`, and a fresh live-app `PAYPAL_WEBHOOK_ID` in Vercel when you're ready to take real payments. Until then, leaving it on `sandbox` is deliberate for a public demo link — it lets visitors run through a full checkout without real charges.
 
 ## Project structure
 
@@ -144,6 +162,7 @@ src/
     past-events/page.tsx       Past events gallery
     checkout/success/page.tsx  Captures the PayPal order, shows payment-received/confirmed state
     api/checkout/route.ts      Creates the PayPal order
+    api/webhooks/paypal/route.ts  Signature-verified webhook: authoritative fulfillment + refund sync
     admin/page.tsx             Password-gated: approve/decline PAID orders
     admin/login/page.tsx       Admin login form
     admin/actions.ts           Server actions: login/logout, confirm/decline/resend
@@ -162,6 +181,7 @@ src/
     notify.ts                  Sends the order confirmation via whichever contact method was chosen
     resend.ts, whatsapp.ts     Email / WhatsApp send clients, plain fetch
     admin-auth.ts              Password check + signed session-cookie helpers for /admin
+    orders.ts                  Shared order include/type, terminal-status list, atomic status-claim helper
     data.ts                    getActiveEvent / getPastEvents
     format.ts, site-config.ts  Formatting helpers, brand constants
 prisma/
@@ -177,7 +197,6 @@ scripts/
 - **Event/ticket-type management in `/admin`** — order approval is built (see [Admin panel](#admin-panel)), but creating/editing events, ticket types, and gallery uploads is still done by hand in `seed.ts`
 - **Scannable digital tickets** — the buyer now gets an order confirmation by email or WhatsApp (see [src/lib/notify.ts](src/lib/notify.ts)), but not yet an individual scannable admission ticket. Needs a `Ticket` model (one row per admitted person, not per order, each with a unique code + `checkedInAt`), a QR code per ticket, and eventually a door check-in scanner view
 - **New-order alerts** — the business owner currently has to check `/admin` to see what's awaiting approval; a notification (email/WhatsApp to the business itself) on every new order would close that loop
-- **PayPal webhook** — orders are currently captured synchronously when the buyer lands back on the success page; a `PAYMENT.CAPTURE.COMPLETED` webhook would make fulfillment resilient to the buyer closing their browser mid-redirect
 - Customer-initiated cancellation (refunds already happen automatically on a lost last-ticket race, and manually via [Decline in /admin](#admin-panel) — but there's no "I want to cancel my own order" path for the buyer)
 - Multiple simultaneous on-sale events (currently one "active" event at a time)
 

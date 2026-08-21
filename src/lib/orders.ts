@@ -1,3 +1,4 @@
+import { prisma } from "@/lib/prisma";
 import type { Prisma, OrderStatus } from "@prisma/client";
 
 /** The standard "give me everything needed to display/notify about an
@@ -18,4 +19,22 @@ export const TERMINAL_ORDER_STATUSES: OrderStatus[] = ["CONFIRMED", "CANCELED", 
 
 export function isTerminalOrderStatus(status: OrderStatus): boolean {
   return TERMINAL_ORDER_STATUSES.includes(status);
+}
+
+/**
+ * Atomically transitions an order from one of `fromStatuses` to `toStatus`
+ * via a single conditional UPDATE, so concurrent callers (a double-click,
+ * two admin tabs, a webhook racing an admin action) can't both "win" the
+ * same transition. Returns true if this call was the one that won it.
+ */
+export async function claimOrderStatus(
+  orderId: string,
+  fromStatuses: OrderStatus[],
+  toStatus: OrderStatus
+): Promise<boolean> {
+  const result = await prisma.order.updateMany({
+    where: { id: orderId, status: { in: fromStatuses } },
+    data: { status: toStatus },
+  });
+  return result.count === 1;
 }

@@ -81,6 +81,10 @@ export async function createPayPalOrder(params: {
       purchase_units: [
         {
           reference_id: referenceId,
+          // Round-trips onto the resulting Capture resource, so the
+          // webhook can map an incoming event straight back to our order
+          // without a secondary lookup.
+          custom_id: referenceId,
           description,
           amount: {
             currency_code: currency,
@@ -121,4 +125,35 @@ export async function refundPayPalCapture(captureId: string) {
     method: "POST",
     body: JSON.stringify({ note_to_payer: "Ticket sold out before payment completed." }),
   });
+}
+
+/**
+ * Asks PayPal to verify that an incoming webhook request really came from
+ * them (rather than someone POSTing a forged "payment completed" body at
+ * our endpoint) — the standard PayPal webhook verification API. Must be
+ * called before trusting anything in the event body.
+ * https://developer.paypal.com/docs/api/webhooks/v1/#verify-webhook-signature
+ */
+export async function verifyWebhookSignature(params: {
+  authAlgo: string;
+  certUrl: string;
+  transmissionId: string;
+  transmissionSig: string;
+  transmissionTime: string;
+  webhookId: string;
+  webhookEvent: unknown;
+}): Promise<boolean> {
+  const data = await paypalFetch("/v1/notifications/verify-webhook-signature", {
+    method: "POST",
+    body: JSON.stringify({
+      auth_algo: params.authAlgo,
+      cert_url: params.certUrl,
+      transmission_id: params.transmissionId,
+      transmission_sig: params.transmissionSig,
+      transmission_time: params.transmissionTime,
+      webhook_id: params.webhookId,
+      webhook_event: params.webhookEvent,
+    }),
+  });
+  return data.verification_status === "SUCCESS";
 }
