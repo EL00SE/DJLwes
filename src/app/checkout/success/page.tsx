@@ -73,7 +73,34 @@ export default async function CheckoutSuccessPage({
     });
   }
 
-  if (!order || order.status !== "PAID") {
+  if (!order) {
+    return (
+      <FailureState
+        heading="We couldn't find that order"
+        message="If you were charged, contact us and we'll sort it out."
+      />
+    );
+  }
+
+  if (order.status === "REFUNDED") {
+    return (
+      <FailureState
+        heading="That ticket just sold out"
+        message="You were briefly charged while completing payment, but the last ticket was taken a moment before you — you've been automatically refunded in full and won't be charged. Sorry about that. Check back in case more become available."
+      />
+    );
+  }
+
+  if (order.status === "FAILED") {
+    return (
+      <FailureState
+        heading="Something went wrong"
+        message="Your payment may have gone through but we couldn't confirm your tickets. We've been notified — contact us with your email and we'll make it right."
+      />
+    );
+  }
+
+  if (order.status !== "PAID") {
     return (
       <FailureState
         heading="Payment still processing"
@@ -90,7 +117,8 @@ export default async function CheckoutSuccessPage({
         Tickets Confirmed
       </h1>
       <p className="text-ink-muted">
-        A confirmation has been sent to <span className="text-ink">{order.customerEmail}</span>.
+        Booked under <span className="text-ink">{order.customerEmail}</span> — save this page as
+        your confirmation.
       </p>
 
       <div className="card-edge mt-4 w-full rounded-3xl border border-line p-6 text-left sm:p-8">

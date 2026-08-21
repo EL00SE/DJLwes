@@ -79,7 +79,13 @@ enum OrderStatus {
   PENDING
   PAID
   CANCELED
+  /// Paid on PayPal but couldn't be fulfilled (lost a race for the last
+  /// ticket) and the automatic refund attempt itself failed — needs a
+  /// human to refund manually.
   FAILED
+  /// Paid on PayPal but couldn't be fulfilled, and was successfully
+  /// refunded automatically.
+  REFUNDED
 }
 
 /// One checkout attempt/purchase. Created as PENDING when the buyer starts

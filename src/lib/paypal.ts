@@ -110,3 +110,15 @@ export async function capturePayPalOrder(orderId: string): Promise<PayPalOrder> 
 export function findApproveLink(order: PayPalOrder): string | null {
   return order.links.find((link) => link.rel === "approve")?.href ?? null;
 }
+
+/**
+ * Fully refunds a capture. Used when a payment succeeds but we can no
+ * longer fulfill the order (e.g. lost a race against the last ticket) —
+ * we should never keep money for a ticket we didn't deliver.
+ */
+export async function refundPayPalCapture(captureId: string) {
+  return paypalFetch(`/v2/payments/captures/${captureId}/refund`, {
+    method: "POST",
+    body: JSON.stringify({ note_to_payer: "Ticket sold out before payment completed." }),
+  });
+}

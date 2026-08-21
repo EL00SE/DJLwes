@@ -13,41 +13,41 @@ async function main() {
   await prisma.event.deleteMany();
 
   const upcomingDate = new Date();
-  upcomingDate.setDate(upcomingDate.getDate() + 21);
-  upcomingDate.setHours(22, 0, 0, 0);
+  upcomingDate.setDate(upcomingDate.getDate() - 1);
+  upcomingDate.setHours(21, 0, 0, 0);
 
   await prisma.event.create({
     data: {
-      slug: "etfe-el-boiler-vol-3",
-      title: "Etfe El Boiler Vol. 3",
+      slug: "Gimme-More-Ya-lel",
+      title: "Gimme more يا ليل",
       description:
-        "DJ Lwes returns to the warehouse for another night of raw underground deep house — low lights, loud subs, no phones on the floor.",
+        "DJ Lwes returns to the the Old Shool Club for another unparalleled musical experience — low lights, loud subs, no phones on the floor.",
       date: upcomingDate,
-      location: "The Foundry, Haifa",
-      coverImage: "/images/event-cover-boiler.svg",
+      location: "Old School Club, Haifa",
+      coverImage: "/images/GimmeMore.jpg",
       isActive: true,
       ticketTypes: {
         create: [
           {
             name: "Early Bird",
             description: "Limited discounted entry before doors.",
-            priceCents: 2500,
-            quantityTotal: 40,
-            quantityRemaining: 12,
+            priceCents: 5000,
+            quantityTotal: 20,
+            quantityRemaining: 8,
           },
           {
-            name: "General Admission",
+            name: "Standard",
             description: "Standard entry, all night.",
-            priceCents: 3500,
-            quantityTotal: 150,
-            quantityRemaining: 150,
+            priceCents: 8000,
+            quantityTotal: 70,
+            quantityRemaining: 70,
           },
           {
-            name: "VIP",
-            description: "Priority entry, reserved area near the booth.",
-            priceCents: 6000,
+            name: "Fashionably Late",
+            description: "Last-minute entry, all night.",
+            priceCents: 10000,
             quantityTotal: 25,
-            quantityRemaining: 6,
+            quantityRemaining: 25,
           },
         ],
       },
