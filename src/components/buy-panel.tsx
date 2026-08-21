@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatPrice } from "@/lib/format";
+import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE, countryFlagEmoji } from "@/lib/country-codes";
 import type { TicketTypeSummary } from "@/components/ticket-type-card";
 
 // Matches the server-side check in api/checkout/route.ts. Instagram has no
@@ -29,7 +30,8 @@ export function BuyPanel({
   const [instagram, setInstagram] = useState("");
   const [contactMethod, setContactMethod] = useState<"EMAIL" | "WHATSAPP">("EMAIL");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [countryDialCode, setCountryDialCode] = useState(DEFAULT_COUNTRY_DIAL_CODE);
+  const [phoneLocal, setPhoneLocal] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +64,8 @@ export function BuyPanel({
     setError(null);
     setIsSubmitting(true);
     try {
+      const phone =
+        contactMethod === "WHATSAPP" ? `${countryDialCode} ${phoneLocal.trim()}`.trim() : "";
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -237,19 +241,33 @@ export function BuyPanel({
                 />
               </label>
             ) : (
-              <label className="flex flex-col gap-1.5 text-sm">
+              <div className="flex flex-col gap-1.5 text-sm">
                 <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
                   WhatsApp number
                 </span>
-                <input
-                  required
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+972 50 123 4567"
-                  className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
-                />
-              </label>
+                <div className="flex gap-2">
+                  <select
+                    value={countryDialCode}
+                    onChange={(e) => setCountryDialCode(e.target.value)}
+                    aria-label="Country code"
+                    className="w-[6.5rem] shrink-0 rounded-xl border border-line bg-bg/60 px-2 py-2.5 text-ink outline-none transition-colors focus:border-accent"
+                  >
+                    {COUNTRY_CODES.map((country) => (
+                      <option key={`${country.iso}-${country.dialCode}`} value={country.dialCode}>
+                        {countryFlagEmoji(country.iso)} {country.dialCode}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    required
+                    type="tel"
+                    value={phoneLocal}
+                    onChange={(e) => setPhoneLocal(e.target.value)}
+                    placeholder="50 123 4567"
+                    className="min-w-0 flex-1 rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                  />
+                </div>
+              </div>
             )}
           </div>
 
