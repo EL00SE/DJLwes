@@ -21,8 +21,9 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 - **Current event page** — title, description, date/time, location, cover image, and live ticket types with remaining quantity
 - **Past events gallery** — grid of photos/video per past event
 - **Buy flow** — clicking "Buy" opens a ticket panel: side-by-side on desktop, or on mobile the page smooth-scrolls to center the form in the viewport (the header un-stickies below `lg:` specifically so this centers against the *true* visible viewport, not one a floating header is eating into)
-- **Checkout** — PayPal Checkout (sandbox/test mode) for payment
-- **Confirmation** — order summary shown after a successful purchase, plus a real confirmation sent to the buyer's choice of email (via [Resend](https://resend.com)) or WhatsApp (via [Meta's WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api)) — see [src/lib/notify.ts](src/lib/notify.ts). This is an order confirmation, not yet a scannable admission ticket — see [Planned features](#planned-features)
+- **Checkout** — PayPal Checkout (sandbox/test mode) for payment, plus a required Instagram handle so the business owner can vet who's buying before approving an order
+- **Manual approval before tickets go out** — payment is captured immediately, but the buyer's ticket confirmation isn't sent until the business owner approves the order in [`/admin`](#admin-panel). Declining automatically refunds the payment and releases the ticket back into inventory — see [src/app/admin/actions.ts](src/app/admin/actions.ts)
+- **Confirmation** — once approved, a real confirmation is sent to the buyer's choice of email (via [Resend](https://resend.com)) or WhatsApp (via [Meta's WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api)) — see [src/lib/notify.ts](src/lib/notify.ts). This is an order confirmation, not yet a scannable admission ticket — see [Planned features](#planned-features)
 - **Inventory safety** — ticket quantities are decremented atomically on payment, so two buyers can never both win the same last ticket. If a buyer loses that race *after* paying, they're automatically refunded in full rather than left charged with nothing — see [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts) and the verification script at [scripts/test-oversell-race.ts](scripts/test-oversell-race.ts), which simulates two concurrent buyers racing for the last ticket against a real database
 - **Responsive down to 320px** — hamburger nav below `sm:`, 44px touch targets on buy controls, no horizontal overflow anywhere in the range, audited from a 320px phone up through 2560px ultra-wide
 
@@ -40,7 +41,7 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 
 `Event` → has many `TicketType` and `GalleryItem`. `Order` → belongs to an `Event`, has many `OrderItem` (each pointing at a `TicketType`). See [prisma/schema.prisma](prisma/schema.prisma).
 
-There's no admin panel yet (see [Planned features](#planned-features)), so events are seeded manually — edit [prisma/seed.ts](prisma/seed.ts) and re-run the seed command to change what's on the site.
+There's an admin view for *approving orders* (see [Admin panel](#admin-panel) below), but no admin UI yet for events/ticket types themselves — those are still seeded manually, so edit [prisma/seed.ts](prisma/seed.ts) and re-run the seed command to change what's on the site.
 
 ## Setup
 
@@ -51,6 +52,7 @@ There's no admin panel yet (see [Planned features](#planned-features)), so event
 - A [PayPal Developer](https://developer.paypal.com/dashboard/) account (free — used to create a sandbox app for test-mode payments; no real charges)
 - A [Resend](https://resend.com/) account (free tier, no card required) for sending order-confirmation emails
 - Optional, for WhatsApp delivery: a [Meta for Developers](https://developers.facebook.com/) app with the WhatsApp product added — see [WhatsApp setup](#whatsapp-setup) below. Skip this and the site still works fine with email-only delivery.
+- A password of your choosing for the [admin panel](#admin-panel) (`ADMIN_PASSWORD`) — no account/signup, just pick one
 
 ### 1. Install dependencies
 
@@ -74,6 +76,7 @@ Fill in `.env`:
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` for local dev |
 | `RESEND_API_KEY` | [resend.com/api-keys](https://resend.com/api-keys) |
 | `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` | See [WhatsApp setup](#whatsapp-setup) below — optional, only needed if you want WhatsApp delivery working |
+| `ADMIN_PASSWORD` | Pick anything — this is the only thing gating `/admin` |
 
 **Local Postgres via Docker** (optional — skip if using a hosted database):
 
@@ -116,10 +119,19 @@ Unlike email, WhatsApp won't let a business send free-form text as the *first* m
 
 Until this is set up, the site works fine — checkout still offers the WhatsApp option, but `src/lib/whatsapp.ts` logs a warning and the order confirmation is simply skipped rather than failing the purchase (the same is true if `RESEND_API_KEY` is missing).
 
+## Admin panel
+
+Visit `/admin` and log in with `ADMIN_PASSWORD` (session lasts 7 days, single shared password — there's no per-person accounts, and it's not meant for a team of staff logging in independently). You'll see:
+
+- **Awaiting your approval** — every `PAID` order, oldest first, with the buyer's name, Instagram handle (linked out), contact info, tickets, and total. **Approve** sends the confirmation email/WhatsApp immediately. **Decline & Refund** refunds the PayPal payment in full and puts the ticket(s) back into inventory for someone else to buy.
+- **Recent history** — the last 20 approved/declined orders, for reference. A confirmed order whose notification failed to send (e.g. `RESEND_API_KEY` wasn't set yet) shows a **Resend** button.
+
+There's intentionally no "cancel/undo" on an approval — the confirmation goes out the moment you click Approve.
+
 ## Deployment (Vercel)
 
 1. Push this repo to GitHub and import it into [Vercel](https://vercel.com/new).
-2. Add `DATABASE_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, and `RESEND_API_KEY` in the Vercel project settings (point `DATABASE_URL` at your production Postgres); add `WHATSAPP_ACCESS_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` too if you've done the [WhatsApp setup](#whatsapp-setup). `NEXT_PUBLIC_SITE_URL` doesn't need to be set on Vercel — it auto-detects the deployment's own domain (see [src/lib/site-config.ts](src/lib/site-config.ts)); only set it if you want to force a custom domain before it's attached.
+2. Add `DATABASE_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, `RESEND_API_KEY`, and `ADMIN_PASSWORD` (pick a real one — this is a real password on a live site now) in the Vercel project settings (point `DATABASE_URL` at your production Postgres); add `WHATSAPP_ACCESS_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` too if you've done the [WhatsApp setup](#whatsapp-setup). `NEXT_PUBLIC_SITE_URL` doesn't need to be set on Vercel — it auto-detects the deployment's own domain (see [src/lib/site-config.ts](src/lib/site-config.ts)); only set it if you want to force a custom domain before it's attached.
 3. Run `npm run db:migrate` (or `npx prisma migrate deploy`) against the production database once, then `npm run db:seed` to load your real event data.
 4. Create a **live** PayPal app at [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live), and set `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` to its live credentials and `PAYPAL_ENV=live` in Vercel when you're ready to take real payments. Until then, leaving it on `sandbox` is deliberate for a public demo link — it lets visitors run through a full checkout without real charges.
 
@@ -130,8 +142,11 @@ src/
   app/
     page.tsx                   Current event page
     past-events/page.tsx       Past events gallery
-    checkout/success/page.tsx  Captures the PayPal order, shows confirmation
+    checkout/success/page.tsx  Captures the PayPal order, shows payment-received/confirmed state
     api/checkout/route.ts      Creates the PayPal order
+    admin/page.tsx             Password-gated: approve/decline PAID orders
+    admin/login/page.tsx       Admin login form
+    admin/actions.ts           Server actions: login/logout, confirm/decline/resend
     icon.png, apple-icon.png   Favicon / touch icon, generated from the brand logo
   components/
     site-header.tsx            Sticky (lg:+) / scrolls-away (below lg:) header with hamburger nav
@@ -146,6 +161,7 @@ src/
     fulfill-order.ts           Marks an order PAID + decrements inventory, or refunds on a lost race
     notify.ts                  Sends the order confirmation via whichever contact method was chosen
     resend.ts, whatsapp.ts     Email / WhatsApp send clients, plain fetch
+    admin-auth.ts              Password check + signed session-cookie helpers for /admin
     data.ts                    getActiveEvent / getPastEvents
     format.ts, site-config.ts  Formatting helpers, brand constants
 prisma/
@@ -158,11 +174,11 @@ scripts/
 
 ## Planned features
 
-- **Admin panel** — create/edit events, ticket types, and gallery uploads without touching `seed.ts` directly; view and manage orders
+- **Event/ticket-type management in `/admin`** — order approval is built (see [Admin panel](#admin-panel)), but creating/editing events, ticket types, and gallery uploads is still done by hand in `seed.ts`
 - **Scannable digital tickets** — the buyer now gets an order confirmation by email or WhatsApp (see [src/lib/notify.ts](src/lib/notify.ts)), but not yet an individual scannable admission ticket. Needs a `Ticket` model (one row per admitted person, not per order, each with a unique code + `checkedInAt`), a QR code per ticket, and eventually a door check-in scanner view
-- **Business-side order notifications** — the business itself doesn't currently get notified of new sales beyond checking the database/a future admin panel
+- **New-order alerts** — the business owner currently has to check `/admin` to see what's awaiting approval; a notification (email/WhatsApp to the business itself) on every new order would close that loop
 - **PayPal webhook** — orders are currently captured synchronously when the buyer lands back on the success page; a `PAYMENT.CAPTURE.COMPLETED` webhook would make fulfillment resilient to the buyer closing their browser mid-redirect
-- Customer/business-initiated refunds or order cancellation (there's already an automatic refund if a race for the last ticket is lost — see [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts) — but nothing yet for "I want to cancel my order")
+- Customer-initiated cancellation (refunds already happen automatically on a lost last-ticket race, and manually via [Decline in /admin](#admin-panel) — but there's no "I want to cancel my own order" path for the buyer)
 - Multiple simultaneous on-sale events (currently one "active" event at a time)
 
 ## License

@@ -12,6 +12,12 @@ const checkoutSchema = z
     ticketTypeId: z.string().min(1),
     quantity: z.number().int().min(1).max(10),
     name: z.string().trim().min(1, "Name is required").max(200),
+    instagram: z
+      .string()
+      .trim()
+      .min(1, "Instagram handle is required")
+      .max(60)
+      .regex(/^@?[A-Za-z0-9._]+$/, "That doesn't look like a valid Instagram handle"),
     contactMethod: z.enum(["EMAIL", "WHATSAPP"]),
     email: z.string().trim().email("A valid email is required").optional().or(z.literal("")),
     phone: z.string().trim().regex(PHONE_PATTERN, "A valid phone number is required").optional().or(z.literal("")),
@@ -40,7 +46,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { eventId, ticketTypeId, quantity, name, contactMethod, email, phone } = parsed.data;
+  const { eventId, ticketTypeId, quantity, name, instagram, contactMethod, email, phone } = parsed.data;
 
   const ticketType = await prisma.ticketType.findUnique({
     where: { id: ticketTypeId },
@@ -66,6 +72,7 @@ export async function POST(request: Request) {
     data: {
       eventId,
       customerName: name,
+      customerInstagram: instagram.replace(/^@/, ""),
       customerEmail: contactMethod === "EMAIL" ? email : null,
       customerPhone: contactMethod === "WHATSAPP" ? phone : null,
       status: "PENDING",

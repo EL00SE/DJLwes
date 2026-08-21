@@ -21,6 +21,7 @@ export function BuyPanel({
 }) {
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState("");
+  const [instagram, setInstagram] = useState("");
   const [contactMethod, setContactMethod] = useState<"EMAIL" | "WHATSAPP">("EMAIL");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -52,6 +53,7 @@ export function BuyPanel({
           ticketTypeId: selectedTicketType.id,
           quantity,
           name,
+          instagram,
           contactMethod,
           email,
           phone,
@@ -147,6 +149,20 @@ export function BuyPanel({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
+                className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+                Instagram
+              </span>
+              <input
+                required
+                type="text"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                placeholder="@yourhandle"
                 className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
               />
             </label>

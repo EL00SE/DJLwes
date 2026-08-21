@@ -2,7 +2,6 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
 import { fulfillOrder } from "@/lib/fulfill-order";
-import { sendTicketConfirmation } from "@/lib/notify";
 import { formatPrice } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -101,30 +100,39 @@ export default async function CheckoutSuccessPage({
     );
   }
 
-  if (order.status !== "PAID") {
+  if (order.status === "PAID") {
+    return (
+      <div className="mx-auto flex max-w-xl flex-col items-center gap-6 px-5 py-24 text-center">
+        <div className="glow-field pointer-events-none absolute" />
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-mint">Payment received</p>
+        <h1 className="text-glow font-display text-5xl tracking-wide text-ink sm:text-6xl">
+          Awaiting Confirmation
+        </h1>
+        <p className="text-ink-muted">
+          You&apos;ve been charged {formatPrice(order.totalCents)} for {order.event.title}.
+          We manually confirm each order before sending tickets — you&apos;ll hear from us via{" "}
+          {order.customerEmail ? "email" : "WhatsApp"} shortly.
+        </p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
+          Order #{order.id.slice(-8).toUpperCase()}
+        </p>
+        <Link
+          href="/"
+          className="mt-2 rounded-full border border-accent-dim px-6 py-2.5 font-mono text-xs uppercase tracking-[0.2em] text-accent-bright transition-colors hover:bg-accent hover:text-white"
+        >
+          Back Home
+        </Link>
+      </div>
+    );
+  }
+
+  if (order.status !== "CONFIRMED") {
     return (
       <FailureState
         heading="Payment still processing"
         message="Hang tight — refresh this page in a few seconds. If this persists, contact us with your confirmation email."
       />
     );
-  }
-
-  if (!order.confirmationSentAt) {
-    try {
-      await sendTicketConfirmation(order);
-      order = await prisma.order.update({
-        where: { id: order.id },
-        data: { confirmationSentAt: new Date() },
-        include: { event: true, items: { include: { ticketType: true } } },
-      });
-    } catch (err) {
-      // Don't fail the confirmation page over a delivery hiccup — the
-      // payment already succeeded. Logged for follow-up; the order stays
-      // eligible to retry next page load since confirmationSentAt is
-      // only set on success.
-      console.error(`Failed to send ticket confirmation for order ${order.id}:`, err);
-    }
   }
 
   return (

@@ -31,6 +31,7 @@ async function main() {
         data: {
           eventId: event.id,
           customerName: name,
+          customerInstagram: name.replace(" ", "").toLowerCase(),
           customerEmail: `${name.replace(" ", "").toLowerCase()}@example.com`,
           status: "PENDING",
           totalCents: ticketType.priceCents,

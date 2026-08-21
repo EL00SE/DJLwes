@@ -77,24 +77,34 @@ model GalleryItem {
 
 enum OrderStatus {
   PENDING
+  /// Payment captured, inventory reserved — awaiting the business owner's
+  /// approval in /admin before the ticket is actually sent.
   PAID
+  /// The business owner approved the order in /admin; the ticket
+  /// confirmation has been (or is about to be) sent.
+  CONFIRMED
   CANCELED
   /// Paid on PayPal but couldn't be fulfilled (lost a race for the last
   /// ticket) and the automatic refund attempt itself failed — needs a
   /// human to refund manually.
   FAILED
-  /// Paid on PayPal but couldn't be fulfilled, and was successfully
-  /// refunded automatically.
+  /// Either the last-ticket race was lost, or the business owner declined
+  /// the order in /admin — either way, refunded and inventory released.
   REFUNDED
 }
 
 /// One checkout attempt/purchase. Created as PENDING when the buyer starts
-/// checkout, then flipped to PAID once their PayPal order is captured
-/// (ticket quantities are only decremented at that point).
+/// checkout, flipped to PAID once their PayPal order is captured (ticket
+/// quantities are decremented at that point), then to CONFIRMED or
+/// REFUNDED once the business owner reviews it in /admin.
 model Order {
   id           String @id @default(cuid())
   eventId      String
   customerName String
+
+  /// Required at checkout — used by the business owner to vet buyers
+  /// before approving an order in /admin.
+  customerInstagram String
 
   /// Exactly one of these is set — the buyer picks email or WhatsApp as
   /// their delivery method at checkout (enforced in the API route and by
@@ -106,7 +116,7 @@ model Order {
   status OrderStatus @default(PENDING)
 
   /// Set once the order-confirmation email/WhatsApp message has actually
-  /// been sent, so a refreshed success page doesn't resend it.
+  /// been sent (on admin approval), so it's never sent twice.
   confirmationSentAt DateTime?
 
   paypalOrderId   String? @unique
