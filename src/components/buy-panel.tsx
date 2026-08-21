@@ -10,14 +10,14 @@ export function BuyPanel({
   ticketTypes,
   selectedTicketTypeId,
   onSelectTicketType,
-  contactFieldsRef,
+  panelRef,
 }: {
   eventId: string;
   eventTitle: string;
   ticketTypes: TicketTypeSummary[];
   selectedTicketTypeId: string | null;
   onSelectTicketType: (id: string) => void;
-  contactFieldsRef?: React.Ref<HTMLDivElement>;
+  panelRef?: React.Ref<HTMLDivElement>;
 }) {
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState("");
@@ -65,7 +65,10 @@ export function BuyPanel({
   }
 
   return (
-    <div className="card-edge sticky top-24 rounded-3xl border border-line p-6 shadow-[0_0_60px_-25px_rgba(177,59,255,0.6)] sm:p-8">
+    <div
+      ref={panelRef}
+      className="card-edge sticky top-24 rounded-3xl border border-line p-6 shadow-[0_0_60px_-25px_rgba(177,59,255,0.6)] sm:p-8"
+    >
       <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent-bright">
         Get tickets
       </p>
@@ -129,7 +132,7 @@ export function BuyPanel({
             </div>
           </label>
 
-          <div ref={contactFieldsRef} className="scroll-mt-28 flex flex-col gap-5">
+          <div className="flex flex-col gap-5">
             <label className="flex flex-col gap-1.5 text-sm">
               <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
                 Full name

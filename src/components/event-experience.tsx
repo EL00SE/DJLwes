@@ -20,15 +20,16 @@ export function EventExperience({
   ticketTypes: TicketTypeSummary[];
 }) {
   const [selectedTicketTypeId, setSelectedTicketTypeId] = useState<string | null>(null);
-  const contactFieldsRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   function handleSelect(id: string) {
     setSelectedTicketTypeId(id);
     // On a stacked (mobile/tablet-portrait) layout the buy form sits below
-    // the ticket list and can run off the bottom of the screen — jump
-    // straight to the name/email fields so the buyer isn't left hunting
-    // for them. On a side-by-side desktop layout the form is already
-    // fully visible, so this is skipped entirely.
+    // the ticket list and can run off the bottom of the screen — jump to
+    // it so the buyer isn't left hunting for it. On a side-by-side desktop
+    // layout the form is already fully visible, so this is skipped
+    // entirely. Centering (rather than aligning to the top) keeps the
+    // footer from creeping into view below a short form.
     const isStackedLayout =
       typeof window !== "undefined" && window.matchMedia(STACKED_LAYOUT_QUERY).matches;
     if (isStackedLayout) {
@@ -38,7 +39,7 @@ export function EventExperience({
       // rAF never fires in some contexts (e.g. a backgrounded/non-visible
       // tab), which would silently skip the scroll entirely.
       setTimeout(() => {
-        contactFieldsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        panelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 0);
     }
   }
@@ -69,7 +70,7 @@ export function EventExperience({
         ticketTypes={ticketTypes}
         selectedTicketTypeId={selectedTicketTypeId}
         onSelectTicketType={handleSelect}
-        contactFieldsRef={contactFieldsRef}
+        panelRef={panelRef}
       />
     </div>
   );
