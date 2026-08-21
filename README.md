@@ -121,9 +121,9 @@ scripts/
 ## Planned features
 
 - **Admin panel** — create/edit events, ticket types, and gallery uploads without touching `seed.ts` directly; view and manage orders
+- **Digital tickets + receipts** — on a successful purchase: an emailed receipt/order record for the business, and a scannable digital ticket (QR code) per ticket for the customer to show at the door. Needs: a transactional email provider (e.g. Resend/Postmark), a `Ticket` model (one row per admitted person, not per order, each with a unique code + `checkedInAt`), and eventually a door check-in scanner view
 - **PayPal webhook** — orders are currently captured synchronously when the buyer lands back on the success page; a `PAYMENT.CAPTURE.COMPLETED` webhook would make fulfillment resilient to the buyer closing their browser mid-redirect
-- Email confirmations (currently the success page is the only receipt)
-- Refunds / order cancellation flow
+- Customer/business-initiated refunds or order cancellation (there's already an automatic refund if a race for the last ticket is lost — see [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts) — but nothing yet for "I want to cancel my order")
 - Multiple simultaneous on-sale events (currently one "active" event at a time)
 
 ## License
