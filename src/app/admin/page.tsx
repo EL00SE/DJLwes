@@ -1,12 +1,11 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatPrice } from "@/lib/format";
-import { ADMIN_SESSION_COOKIE, isValidSessionToken } from "@/lib/admin-auth";
+import { formatPrice, formatDateTime } from "@/lib/format";
+import { orderWithDetailsInclude } from "@/lib/orders";
 import {
   confirmOrderAction,
   declineOrderAction,
   logoutAdminAction,
+  requireAdmin,
   resendConfirmationAction,
 } from "@/app/admin/actions";
 
@@ -22,24 +21,34 @@ function ContactLine({ email, phone }: { email: string | null; phone: string | n
 }
 
 export default async function AdminPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!isValidSessionToken(token)) {
-    redirect("/admin/login");
-  }
+  await requireAdmin();
 
-  const pendingOrders = await prisma.order.findMany({
-    where: { status: "PAID" },
-    orderBy: { createdAt: "asc" },
-    include: { event: true, items: { include: { ticketType: true } } },
-  });
+  // Checkouts that were started but never paid — e.g. the buyer abandoned
+  // PayPal partway through. Purely informational (nothing to approve),
+  // capped to the last two days so it doesn't fill up with ancient noise.
+  const twoDaysAgo = new Date();
+  twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
 
-  const recentOrders = await prisma.order.findMany({
-    where: { status: { in: ["CONFIRMED", "REFUNDED", "FAILED"] } },
-    orderBy: { updatedAt: "desc" },
-    take: 20,
-    include: { event: true, items: { include: { ticketType: true } } },
-  });
+  // Independent queries — run together rather than one after another.
+  const [pendingOrders, unpaidOrders, recentOrders] = await Promise.all([
+    prisma.order.findMany({
+      where: { status: "PAID" },
+      orderBy: { createdAt: "asc" },
+      include: orderWithDetailsInclude,
+    }),
+    prisma.order.findMany({
+      where: { status: "PENDING", createdAt: { gte: twoDaysAgo } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: orderWithDetailsInclude,
+    }),
+    prisma.order.findMany({
+      where: { status: { in: ["CONFIRMED", "REFUNDED", "FAILED", "CANCELED"] } },
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+      include: orderWithDetailsInclude,
+    }),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-12 sm:px-8">
@@ -85,9 +94,7 @@ export default async function AdminPage() {
                 </div>
                 <div className="text-right">
                   <p className="font-display text-2xl text-ink">{formatPrice(order.totalCents)}</p>
-                  <p className="font-mono text-xs text-ink-faint">
-                    {order.createdAt.toLocaleString("en-US")}
-                  </p>
+                  <p className="font-mono text-xs text-ink-faint">{formatDateTime(order.createdAt)}</p>
                 </div>
               </div>
 
@@ -113,6 +120,29 @@ export default async function AdminPage() {
                   </button>
                 </form>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <h2 className="mb-4 font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
+        Started, not paid ({unpaidOrders.length})
+      </h2>
+      {unpaidOrders.length === 0 ? (
+        <p className="mb-12 text-ink-muted">No abandoned checkouts in the last 48 hours.</p>
+      ) : (
+        <div className="mb-12 flex flex-col gap-2">
+          {unpaidOrders.map((order) => (
+            <div
+              key={order.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 text-sm opacity-70"
+            >
+              <div>
+                <span className="text-ink">{order.customerName}</span>{" "}
+                <span className="text-ink-faint">@{order.customerInstagram.replace(/^@/, "")}</span>{" "}
+                <span className="text-ink-muted">— {ticketSummary(order.items)}</span>
+              </div>
+              <span className="font-mono text-xs text-ink-faint">{formatDateTime(order.createdAt)}</span>
             </div>
           ))}
         </div>

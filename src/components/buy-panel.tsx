@@ -4,6 +4,11 @@ import { useMemo, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import type { TicketTypeSummary } from "@/components/ticket-type-card";
 
+// Matches the server-side check in api/checkout/route.ts. Instagram has no
+// public API for searching/autocompleting arbitrary handles, so this is a
+// format check + a "go double-check it yourself" link, not a live lookup.
+const INSTAGRAM_HANDLE_PATTERN = /^@?[A-Za-z0-9._]+$/;
+
 export function BuyPanel({
   eventId,
   eventTitle,
@@ -32,6 +37,18 @@ export function BuyPanel({
     () => ticketTypes.find((t) => t.id === selectedTicketTypeId) ?? null,
     [ticketTypes, selectedTicketTypeId]
   );
+
+  // Switching ticket types resets the quantity — otherwise a quantity
+  // picked for one type (e.g. 8, when 10 were left) could silently exceed
+  // a different type's stock (e.g. only 2 left) after switching, showing
+  // a total that doesn't match what checkout would actually charge.
+  // Adjusting state during render (rather than in an effect) is the
+  // React-recommended pattern for this: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevSelectedTicketTypeId, setPrevSelectedTicketTypeId] = useState(selectedTicketTypeId);
+  if (selectedTicketTypeId !== prevSelectedTicketTypeId) {
+    setPrevSelectedTicketTypeId(selectedTicketTypeId);
+    setQuantity(1);
+  }
 
   const maxQuantity = selectedTicketType ? Math.min(10, selectedTicketType.quantityRemaining) : 1;
   const total = selectedTicketType ? selectedTicketType.priceCents * quantity : 0;
@@ -165,6 +182,16 @@ export function BuyPanel({
                 placeholder="@yourhandle"
                 className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
               />
+              {INSTAGRAM_HANDLE_PATTERN.test(instagram.trim()) && (
+                <a
+                  href={`https://instagram.com/${instagram.trim().replace(/^@/, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="self-start font-mono text-[11px] text-accent-bright hover:underline"
+                >
+                  → View @{instagram.trim().replace(/^@/, "")} on Instagram, to double-check
+                </a>
+              )}
             </label>
 
             <div className="flex flex-col gap-1.5 text-sm">

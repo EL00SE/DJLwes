@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
 import { fulfillOrder } from "@/lib/fulfill-order";
+import { orderWithDetailsInclude } from "@/lib/orders";
 import { formatPrice } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -39,21 +40,12 @@ export default async function CheckoutSuccessPage({
     );
   }
 
-  let order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: { event: true, items: { include: { ticketType: true } } },
-  });
+  const fetchOrder = () =>
+    prisma.order.findUnique({ where: { id: orderId }, include: orderWithDetailsInclude });
 
-  if (!order) {
-    return (
-      <FailureState
-        heading="We couldn't find that order"
-        message="If you were charged, contact us and we'll sort it out."
-      />
-    );
-  }
+  let order = await fetchOrder();
 
-  if (order.status === "PENDING" && order.paypalOrderId) {
+  if (order && order.status === "PENDING" && order.paypalOrderId) {
     try {
       const capture = await capturePayPalOrder(order.paypalOrderId);
       const captureId = capture.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? null;
@@ -66,11 +58,8 @@ export default async function CheckoutSuccessPage({
       // so only log unexpected failures rather than surfacing an error.
       console.error("PayPal capture failed:", err);
     }
-    // Re-fetch (with relations) since fulfillOrder may have changed the status.
-    order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { event: true, items: { include: { ticketType: true } } },
-    });
+    // Re-fetch since fulfillOrder may have changed the status.
+    order = await fetchOrder();
   }
 
   if (!order) {

@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { refundPayPalCapture } from "@/lib/paypal";
 
+/** Thrown inside the transaction below to trigger a full rollback — see fulfillOrder. */
+class OversoldError extends Error {}
+
 /**
  * Marks an order as PAID and decrements ticket inventory, exactly once —
  * or, if inventory ran out from underneath it, automatically refunds the
@@ -18,38 +21,53 @@ import { refundPayPalCapture } from "@/lib/paypal";
  * refunded here rather than left charged with nothing to show for it.
  */
 export async function fulfillOrder(orderId: string, captureId: string | null) {
-  const result = await prisma.$transaction(async (tx) => {
+  let oversold = false;
+
+  const order = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: { items: true },
     });
-    if (!order) return { outcome: "not-found" as const, order: null };
-    if (order.status === "PAID" || order.status === "REFUNDED") {
-      return { outcome: "already-settled" as const, order };
+    if (!order) return null;
+    // PAID, CONFIRMED, and REFUNDED are all "already handled" — nothing
+    // left for this function to do (CONFIRMED in particular matters if
+    // this is ever called a second time after an admin has approved the
+    // order, e.g. from a future webhook).
+    if (order.status === "PAID" || order.status === "CONFIRMED" || order.status === "REFUNDED") {
+      return order;
     }
 
+    // Multiple ticket types per order are supported by the schema even
+    // though today's checkout only ever creates one-item orders. Throwing
+    // (rather than returning) on a failed reservation rolls back every
+    // decrement already applied earlier in this loop, atomically — a
+    // partial reservation is never left committed.
     for (const item of order.items) {
       const updated = await tx.ticketType.updateMany({
         where: { id: item.ticketTypeId, quantityRemaining: { gte: item.quantity } },
         data: { quantityRemaining: { decrement: item.quantity } },
       });
       if (updated.count === 0) {
-        const failed = await tx.order.update({
-          where: { id: order.id },
-          data: { status: "FAILED", paypalCaptureId: captureId ?? undefined },
-        });
-        return { outcome: "oversold" as const, order: failed };
+        throw new OversoldError();
       }
     }
 
-    const paid = await tx.order.update({
+    return tx.order.update({
       where: { id: order.id },
       data: { status: "PAID", paypalCaptureId: captureId ?? undefined },
     });
-    return { outcome: "fulfilled" as const, order: paid };
+  }).catch(async (err) => {
+    if (!(err instanceof OversoldError)) throw err;
+    oversold = true;
+    // The reservation transaction above rolled back cleanly, so this is a
+    // separate, lightweight write — no inventory changes here.
+    return prisma.order.update({
+      where: { id: orderId },
+      data: { status: "FAILED", paypalCaptureId: captureId ?? undefined },
+    });
   });
 
-  if (result.outcome === "oversold" && captureId) {
+  if (oversold && order && captureId) {
     try {
       await refundPayPalCapture(captureId);
       return prisma.order.update({ where: { id: orderId }, data: { status: "REFUNDED" } });
@@ -58,7 +76,13 @@ export async function fulfillOrder(orderId: string, captureId: string | null) {
       // human needs to issue this refund manually from the PayPal dashboard.
       console.error(`Auto-refund failed for order ${orderId}, capture ${captureId}:`, err);
     }
+  } else if (oversold && order && !captureId) {
+    // No capture id to refund against — stays FAILED. Logged loudly since
+    // this means a payment was taken with no automatic way to reverse it.
+    console.error(
+      `Order ${orderId} was oversold but has no paypalCaptureId — refund must be issued manually.`
+    );
   }
 
-  return result.order;
+  return order;
 }

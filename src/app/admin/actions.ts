@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refundPayPalCapture } from "@/lib/paypal";
 import { sendTicketConfirmation } from "@/lib/notify";
+import { orderWithDetailsInclude } from "@/lib/orders";
 import {
   ADMIN_SESSION_COOKIE,
   createSessionToken,
@@ -15,12 +16,30 @@ import {
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-async function requireAdmin() {
+/** Redirects to /admin/login unless the session cookie is valid. Exported
+ * so admin/page.tsx can reuse the exact same check instead of keeping its
+ * own copy that could drift out of sync. */
+export async function requireAdmin() {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
   if (!isValidSessionToken(token)) {
     redirect("/admin/login");
   }
+}
+
+/**
+ * Atomically moves an order from PAID to `nextStatus` — a single
+ * conditional UPDATE, so if two admin actions (a double-click, two open
+ * tabs) race for the same order, exactly one of them wins this claim and
+ * the other sees `false` and bails out immediately. Prevents e.g. Approve
+ * and Decline both succeeding for the same order.
+ */
+async function claimPaidOrder(orderId: string, nextStatus: "CONFIRMED" | "REFUNDED"): Promise<boolean> {
+  const result = await prisma.order.updateMany({
+    where: { id: orderId, status: "PAID" },
+    data: { status: nextStatus },
+  });
+  return result.count === 1;
 }
 
 export async function loginAdminAction(formData: FormData) {
@@ -49,23 +68,23 @@ export async function logoutAdminAction() {
 export async function confirmOrderAction(orderId: string) {
   await requireAdmin();
 
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: { event: true, items: { include: { ticketType: true } } },
-  });
-  if (!order || order.status !== "PAID") {
+  if (!(await claimPaidOrder(orderId, "CONFIRMED"))) {
+    // Already claimed (approved/declined) by a concurrent request.
     revalidatePath("/admin");
     return;
   }
 
-  const confirmed = await prisma.order.update({
+  const order = await prisma.order.findUnique({
     where: { id: orderId },
-    data: { status: "CONFIRMED" },
-    include: { event: true, items: { include: { ticketType: true } } },
+    include: orderWithDetailsInclude,
   });
+  if (!order) {
+    revalidatePath("/admin");
+    return;
+  }
 
   try {
-    await sendTicketConfirmation(confirmed);
+    await sendTicketConfirmation(order);
     await prisma.order.update({ where: { id: orderId }, data: { confirmationSentAt: new Date() } });
   } catch (err) {
     // The approval itself still stands — this just means the notification
@@ -81,19 +100,35 @@ export async function confirmOrderAction(orderId: string) {
 export async function declineOrderAction(orderId: string) {
   await requireAdmin();
 
+  // Claim it as REFUNDED optimistically — this is what wins the race
+  // against a concurrent Approve. Corrected to FAILED below if the refund
+  // itself doesn't actually go through, so the DB never reports a refund
+  // that didn't happen.
+  if (!(await claimPaidOrder(orderId, "REFUNDED"))) {
+    revalidatePath("/admin");
+    return;
+  }
+
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: true },
   });
-  if (!order || order.status !== "PAID") {
+  if (!order) {
+    revalidatePath("/admin");
+    return;
+  }
+
+  if (!order.paypalCaptureId) {
+    // No capture id means we can't actually verify/issue a refund — don't
+    // let the order sit marked REFUNDED when nothing was refunded.
+    await prisma.order.update({ where: { id: orderId }, data: { status: "FAILED" } });
+    console.error(`Order ${orderId} declined but has no paypalCaptureId — refund must be issued manually.`);
     revalidatePath("/admin");
     return;
   }
 
   try {
-    if (order.paypalCaptureId) {
-      await refundPayPalCapture(order.paypalCaptureId);
-    }
+    await refundPayPalCapture(order.paypalCaptureId);
     await prisma.$transaction(async (tx) => {
       for (const item of order.items) {
         await tx.ticketType.update({
@@ -101,11 +136,10 @@ export async function declineOrderAction(orderId: string) {
           data: { quantityRemaining: { increment: item.quantity } },
         });
       }
-      await tx.order.update({ where: { id: order.id }, data: { status: "REFUNDED" } });
     });
   } catch (err) {
     console.error(`Failed to decline/refund order ${orderId}:`, err);
-    await prisma.order.update({ where: { id: order.id }, data: { status: "FAILED" } });
+    await prisma.order.update({ where: { id: orderId }, data: { status: "FAILED" } });
   }
 
   revalidatePath("/admin");
@@ -117,7 +151,7 @@ export async function resendConfirmationAction(orderId: string) {
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { event: true, items: { include: { ticketType: true } } },
+    include: orderWithDetailsInclude,
   });
   if (!order || order.status !== "CONFIRMED") {
     revalidatePath("/admin");

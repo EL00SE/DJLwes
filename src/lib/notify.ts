@@ -2,12 +2,16 @@ import { sendEmail } from "@/lib/resend";
 import { sendWhatsAppTicketConfirmation } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/format";
 import { siteConfig } from "@/lib/site-config";
-import type { Order, OrderItem, TicketType, Event } from "@prisma/client";
+import type { OrderWithDetails } from "@/lib/orders";
 
-type OrderWithDetails = Order & {
-  event: Event;
-  items: (OrderItem & { ticketType: TicketType })[];
-};
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function ticketSummary(order: OrderWithDetails): string {
   return order.items.map((item) => `${item.quantity} × ${item.ticketType.name}`).join(", ");
@@ -17,7 +21,7 @@ function confirmationEmailHtml(order: OrderWithDetails): string {
   const rows = order.items
     .map(
       (item) => `<tr>
-        <td style="padding:8px 0;color:#444;">${item.quantity} × ${item.ticketType.name}</td>
+        <td style="padding:8px 0;color:#444;">${item.quantity} × ${escapeHtml(item.ticketType.name)}</td>
         <td style="padding:8px 0;text-align:right;color:#111;">${formatPrice(item.unitPriceCents * item.quantity)}</td>
       </tr>`
     )
@@ -26,10 +30,10 @@ function confirmationEmailHtml(order: OrderWithDetails): string {
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
       <p style="color:#888;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;margin:0 0 8px;">
-        ${siteConfig.djName} &middot; ${siteConfig.eventSeriesName}
+        ${escapeHtml(siteConfig.djName)} &middot; ${escapeHtml(siteConfig.eventSeriesName)}
       </p>
-      <h1 style="font-size:24px;margin:0 0 16px;">You're in — ${order.event.title}</h1>
-      <p style="color:#444;">Hi ${order.customerName}, your tickets are confirmed.</p>
+      <h1 style="font-size:24px;margin:0 0 16px;">You're in — ${escapeHtml(order.event.title)}</h1>
+      <p style="color:#444;">Hi ${escapeHtml(order.customerName)}, your tickets are confirmed.</p>
       <table style="width:100%;border-collapse:collapse;margin:24px 0;border-top:1px solid #eee;">
         ${rows}
         <tr style="border-top:1px solid #eee;">

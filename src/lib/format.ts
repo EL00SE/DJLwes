@@ -29,3 +29,14 @@ export function formatEventTime(date: Date): string {
     timeZone: EVENT_TIME_ZONE,
   }).format(date);
 }
+
+/** For timestamps that aren't the event date itself (e.g. "when was this
+ * order placed") but should still read correctly regardless of which
+ * timezone the rendering server happens to be in. */
+export function formatDateTime(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: EVENT_TIME_ZONE,
+  }).format(date);
+}
