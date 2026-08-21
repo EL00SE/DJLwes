@@ -17,7 +17,9 @@ export function SiteHeader() {
               className="h-full w-full object-cover"
             />
           </span>
-          <span className="font-display text-2xl tracking-wide text-ink transition-colors group-hover:text-accent-bright">
+          {/* Icon-only below `sm:` — there isn't room for the wordmark next
+              to both nav links on very narrow screens without wrapping. */}
+          <span className="hidden whitespace-nowrap font-display text-2xl tracking-wide text-ink transition-colors group-hover:text-accent-bright sm:inline">
             {siteConfig.djName.toUpperCase()}
           </span>
         </Link>
@@ -25,13 +27,13 @@ export function SiteHeader() {
         <nav className="flex items-center gap-1 font-mono text-xs uppercase tracking-[0.15em]">
           <Link
             href="/"
-            className="rounded-full px-4 py-2 text-ink-muted transition-colors hover:text-ink"
+            className="whitespace-nowrap rounded-full px-3 py-2 text-ink-muted transition-colors hover:text-ink sm:px-4"
           >
             Next Event
           </Link>
           <Link
             href="/past-events"
-            className="rounded-full px-4 py-2 text-ink-muted transition-colors hover:text-ink"
+            className="whitespace-nowrap rounded-full px-3 py-2 text-ink-muted transition-colors hover:text-ink sm:px-4"
           >
             Past Events
           </Link>

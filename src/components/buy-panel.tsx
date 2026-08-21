@@ -1,22 +1,24 @@
 "use client";
 
-import { forwardRef, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import type { TicketTypeSummary } from "@/components/ticket-type-card";
 
-export const BuyPanel = forwardRef<
-  HTMLDivElement,
-  {
-    eventId: string;
-    eventTitle: string;
-    ticketTypes: TicketTypeSummary[];
-    selectedTicketTypeId: string | null;
-    onSelectTicketType: (id: string) => void;
-  }
->(function BuyPanel(
-  { eventId, eventTitle, ticketTypes, selectedTicketTypeId, onSelectTicketType },
-  ref
-) {
+export function BuyPanel({
+  eventId,
+  eventTitle,
+  ticketTypes,
+  selectedTicketTypeId,
+  onSelectTicketType,
+  contactFieldsRef,
+}: {
+  eventId: string;
+  eventTitle: string;
+  ticketTypes: TicketTypeSummary[];
+  selectedTicketTypeId: string | null;
+  onSelectTicketType: (id: string) => void;
+  contactFieldsRef?: React.Ref<HTMLDivElement>;
+}) {
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -63,10 +65,7 @@ export const BuyPanel = forwardRef<
   }
 
   return (
-    <div
-      ref={ref}
-      className="card-edge sticky top-24 rounded-3xl border border-line p-6 shadow-[0_0_60px_-25px_rgba(177,59,255,0.6)] sm:p-8"
-    >
+    <div className="card-edge sticky top-24 rounded-3xl border border-line p-6 shadow-[0_0_60px_-25px_rgba(177,59,255,0.6)] sm:p-8">
       <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent-bright">
         Get tickets
       </p>
@@ -113,7 +112,7 @@ export const BuyPanel = forwardRef<
               <button
                 type="button"
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="h-9 w-9 rounded-full border border-line-strong text-ink transition-colors hover:border-accent hover:text-accent-bright"
+                className="h-11 w-11 rounded-full border border-line-strong text-ink transition-colors hover:border-accent hover:text-accent-bright"
                 aria-label="Decrease quantity"
               >
                 −
@@ -122,7 +121,7 @@ export const BuyPanel = forwardRef<
               <button
                 type="button"
                 onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
-                className="h-9 w-9 rounded-full border border-line-strong text-ink transition-colors hover:border-accent hover:text-accent-bright"
+                className="h-11 w-11 rounded-full border border-line-strong text-ink transition-colors hover:border-accent hover:text-accent-bright"
                 aria-label="Increase quantity"
               >
                 +
@@ -130,33 +129,35 @@ export const BuyPanel = forwardRef<
             </div>
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
-              Full name
-            </span>
-            <input
-              required
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
-            />
-          </label>
+          <div ref={contactFieldsRef} className="scroll-mt-28 flex flex-col gap-5">
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+                Full name
+              </span>
+              <input
+                required
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+              />
+            </label>
 
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
-              Email
-            </span>
-            <input
-              required
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
-            />
-          </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+                Email
+              </span>
+              <input
+                required
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+              />
+            </label>
+          </div>
 
           <div className="flex items-center justify-between border-t border-line pt-4">
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
@@ -181,4 +182,4 @@ export const BuyPanel = forwardRef<
       )}
     </div>
   );
-});
+}

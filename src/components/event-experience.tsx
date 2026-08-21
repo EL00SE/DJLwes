@@ -4,6 +4,12 @@ import { useRef, useState } from "react";
 import { TicketTypeCard, type TicketTypeSummary } from "@/components/ticket-type-card";
 import { BuyPanel } from "@/components/buy-panel";
 
+// Matches the `lg:` breakpoint the grid below switches on — below this
+// width the buy panel is stacked under the ticket list instead of sitting
+// side-by-side, so it needs to be scrolled into view instead of already
+// being visible.
+const STACKED_LAYOUT_QUERY = "(max-width: 1023px)";
+
 export function EventExperience({
   eventId,
   eventTitle,
@@ -14,17 +20,26 @@ export function EventExperience({
   ticketTypes: TicketTypeSummary[];
 }) {
   const [selectedTicketTypeId, setSelectedTicketTypeId] = useState<string | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const contactFieldsRef = useRef<HTMLDivElement>(null);
 
   function handleSelect(id: string) {
     setSelectedTicketTypeId(id);
-    // On mobile the buy panel sits stacked below the ticket list — bring it
-    // into view. On desktop it's already visible side-by-side, so this is
-    // a no-op scroll at worst.
-    if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      requestAnimationFrame(() => {
-        panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+    // On a stacked (mobile/tablet-portrait) layout the buy form sits below
+    // the ticket list and can run off the bottom of the screen — jump
+    // straight to the name/email fields so the buyer isn't left hunting
+    // for them. On a side-by-side desktop layout the form is already
+    // fully visible, so this is skipped entirely.
+    const isStackedLayout =
+      typeof window !== "undefined" && window.matchMedia(STACKED_LAYOUT_QUERY).matches;
+    if (isStackedLayout) {
+      // Wait a tick for the form to actually mount/re-render with the
+      // newly selected ticket type before measuring where to scroll.
+      // A plain setTimeout is used instead of requestAnimationFrame since
+      // rAF never fires in some contexts (e.g. a backgrounded/non-visible
+      // tab), which would silently skip the scroll entirely.
+      setTimeout(() => {
+        contactFieldsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
     }
   }
 
@@ -49,12 +64,12 @@ export function EventExperience({
       </div>
 
       <BuyPanel
-        ref={panelRef}
         eventId={eventId}
         eventTitle={eventTitle}
         ticketTypes={ticketTypes}
         selectedTicketTypeId={selectedTicketTypeId}
         onSelectTicketType={handleSelect}
+        contactFieldsRef={contactFieldsRef}
       />
     </div>
   );

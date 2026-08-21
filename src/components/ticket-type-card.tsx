@@ -49,7 +49,7 @@ export function TicketTypeCard({
           type="button"
           disabled={soldOut}
           onClick={() => onSelect(ticketType.id)}
-          className={`rounded-full px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] transition-all ${
+          className={`min-h-11 rounded-full px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] transition-all ${
             soldOut
               ? "cursor-not-allowed border border-line text-ink-faint"
               : isSelected
