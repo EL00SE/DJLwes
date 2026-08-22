@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { refundPayPalCapture } from "@/lib/paypal";
+import { capturePayPalOrder, refundPayPalCapture } from "@/lib/paypal";
 import { claimOrderStatus } from "@/lib/orders";
+import type { Order } from "@prisma/client";
 
 /** Thrown inside the transaction below to trigger a full rollback — see fulfillOrder. */
 class OversoldError extends Error {}
@@ -86,6 +87,35 @@ export async function fulfillOrder(orderId: string, captureId: string | null) {
   }
 
   return order;
+}
+
+/**
+ * Captures an order's PayPal payment and fulfills it — the shared step
+ * between every PayPal funding source (standard buttons, Apple Pay,
+ * Google Pay all converge on the same Orders v2 capture call once
+ * approved) and the checkout success page's own fallback capture (in
+ * case the buyer's browser closes before the client-side capture call
+ * finishes; the webhook is the true source of truth either way). A no-op
+ * for anything that isn't a still-PENDING PayPal order, so it's always
+ * safe to call speculatively.
+ */
+export async function captureAndFulfillOrder(order: Pick<Order, "id" | "status" | "paypalOrderId">) {
+  if (order.status !== "PENDING" || !order.paypalOrderId) return;
+
+  try {
+    const capture = await capturePayPalOrder(order.paypalOrderId);
+    const captureId = capture.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? null;
+    if (capture.status === "COMPLETED") {
+      await fulfillOrder(order.id, captureId);
+    }
+  } catch (err) {
+    // A 422 here usually just means it was already captured (e.g. the
+    // client-side confirmation and this fallback both fired) —
+    // fulfillOrder is idempotent either way, so only unexpected failures
+    // are worth logging, and even those just leave the order PENDING for
+    // a retry (from the success page, or the webhook) rather than losing it.
+    console.error(`PayPal capture failed for order ${order.id}:`, err);
+  }
 }
 
 /**

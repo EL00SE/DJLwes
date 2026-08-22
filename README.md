@@ -24,7 +24,8 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 - **Current event page** — title, description, date/time, location, cover image, and live ticket types with remaining quantity
 - **Past events gallery** — grid of photos/video per past event
 - **Buy flow** — clicking "Buy" opens a ticket panel: side-by-side on desktop, or on mobile the page smooth-scrolls to center the form in the viewport (the header un-stickies below `lg:` specifically so this centers against the *true* visible viewport, not one a floating header is eating into)
-- **Checkout** — PayPal Checkout (sandbox/test mode) or a manual bank transfer, plus a required Instagram handle so the business owner can vet who's buying before approving an order
+- **Checkout** — embedded PayPal/Venmo, Apple Pay, and Google Pay buttons (buyer never leaves the page) or a manual bank transfer, plus a required Instagram handle so the business owner can vet who's buying before approving an order
+- **Apple Pay / Google Pay, through PayPal** — [src/components/paypal-checkout-buttons.tsx](src/components/paypal-checkout-buttons.tsx) renders PayPal's own Apple Pay/Google Pay wallet components alongside the standard button, wherever the buyer's device/browser and this PayPal account are eligible; both converge on the exact same order-create/capture backend as the standard button, so nothing downstream (inventory, webhook, admin) needs to know which one was used. Apple Pay in particular only ever renders in Safari on a real Apple device with a card already in Wallet, and needs its own domain-verification step — see [Apple Pay / Google Pay setup](#apple-pay--google-pay-setup)
 - **Bank transfer as a second payment method** — a buyer who picks it sees the account details + a short reference to include, instead of being sent to PayPal; the order sits PENDING (no PayPal capture exists to trigger this automatically) until the business owner checks their real bank statement and clicks **Mark as Received** in [`/admin`](#admin-panel) — that reserves inventory and moves it into the exact same approve/decline pipeline as a PayPal order from there. Declining still releases the ticket back into inventory even though there's no refund API to call — the owner just has to actually wire the money back themselves. See [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts)'s `confirmBankTransferPayment` and [src/lib/bank-details.ts](src/lib/bank-details.ts) (placeholder account details — swap in the real ones before this ever takes a real order)
 - **Manual approval before tickets go out** — payment is captured immediately, but the buyer's ticket confirmation isn't sent until the business owner approves the order in [`/admin`](#admin-panel). Declining automatically refunds the payment and releases the ticket back into inventory — see [src/app/admin/actions.ts](src/app/admin/actions.ts)
 - **Confirmation** — once approved, a real confirmation is sent to the buyer's choice of email (via [Resend](https://resend.com), with the QR below both inlined and attached) or WhatsApp (via [Meta's WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api), as a link to their ticket page) — see [src/lib/notify.ts](src/lib/notify.ts)
@@ -42,7 +43,7 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 - [Next.js 16](https://nextjs.org/) (App Router, TypeScript, Turbopack)
 - [Tailwind CSS v4](https://tailwindcss.com/)
 - [Prisma](https://www.prisma.io/) + PostgreSQL
-- [PayPal Checkout](https://developer.paypal.com/docs/checkout/) (Orders v2 REST API, sandbox/test mode)
+- [PayPal Checkout](https://developer.paypal.com/docs/checkout/) (Orders v2 REST API + JS SDK, sandbox/test mode) with embedded Apple Pay/Google Pay
 - [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) for admin-uploaded event cover images
 - [Resend](https://resend.com/) for order-confirmation email, [WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api) for WhatsApp delivery
 - [Green Invoice](https://www.greeninvoice.co.il/) for official receipts, [`qrcode`](https://www.npmjs.com/package/qrcode) / [`jsqr`](https://www.npmjs.com/package/jsqr) for generating and scanning entrance QR codes
@@ -87,6 +88,7 @@ Fill in `.env`:
 | `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | Create a sandbox app at [developer.paypal.com/dashboard/applications/sandbox](https://developer.paypal.com/dashboard/applications/sandbox) — it gives you both |
 | `PAYPAL_ENV` | Leave as `sandbox` for testing; set to `live` (with live keys) when taking real payments |
 | `PAYPAL_WEBHOOK_ID` | See [PayPal webhook setup](#paypal-webhook-setup) below — the webhook won't function without it |
+| `NEXT_PUBLIC_PAYPAL_CLIENT_ID` / `NEXT_PUBLIC_PAYPAL_ENV` | Same values as `PAYPAL_CLIENT_ID` / `PAYPAL_ENV`, exposed to the browser for the embedded checkout buttons — see [Apple Pay / Google Pay setup](#apple-pay--google-pay-setup) for what else those two need |
 | `BLOB_READ_WRITE_TOKEN` | See [Vercel Blob setup](#vercel-blob-setup) below — cover-image upload won't work without it |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` for local dev |
 | `RESEND_API_KEY` | [resend.com/api-keys](https://resend.com/api-keys) |
@@ -118,7 +120,7 @@ npm run db:seed
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000). Clicking "Continue to Payment" redirects to a real PayPal checkout page (sandbox mode, so no real money moves) — log in with a [sandbox test buyer account](https://developer.paypal.com/dashboard/accounts) (created automatically alongside your app) to complete a test purchase.
+Visit [http://localhost:3000](http://localhost:3000). Picking PayPal as the payment method renders real embedded PayPal buttons (sandbox mode, so no real money moves) — log in with a [sandbox test buyer account](https://developer.paypal.com/dashboard/accounts) (created automatically alongside your app) to complete a test purchase. Apple Pay/Google Pay buttons only appear once [their own setup](#apple-pay--google-pay-setup) is done and your device/browser is eligible.
 
 ### Vercel Blob setup
 
@@ -139,6 +141,18 @@ The webhook is what makes fulfillment reliable even when a buyer never makes it 
 Without `PAYPAL_WEBHOOK_ID` set, the endpoint refuses every request (503) rather than silently doing nothing.
 
 **A caveat worth knowing:** PayPal's *sandbox* signature-verification API is known to be more lenient than production — it can return a valid signature for a request that isn't genuinely from PayPal, which makes the "reject a forged webhook" path hard to fully prove out in sandbox specifically (the "reject if headers are missing" and "reject if misconfigured" paths test cleanly either way). This isn't something this codebase can work around — it's PayPal's own sandbox behavior — so treat sandbox webhook testing as proving the *fulfillment logic* works, and trust PayPal's documented signature verification for the actual security guarantee once you're on a live app.
+
+### Apple Pay / Google Pay setup
+
+Both ride on the same PayPal order create/capture backend as the standard button (see [Features](#features)) — this section is only about the extra account-level setup PayPal/Apple require before their buttons will actually render. Neither is required for checkout to work; without them, the buyer just sees the standard PayPal button.
+
+1. Add `NEXT_PUBLIC_PAYPAL_CLIENT_ID` (same value as `PAYPAL_CLIENT_ID`) and `NEXT_PUBLIC_PAYPAL_ENV` (same as `PAYPAL_ENV`) to your env — see the table above. On Vercel, set these in the project's environment variables the same way as any other var (they don't sync automatically from the non-public ones).
+2. In the [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/), open your app and check **Features** for **Apple Pay** and **Google Pay** — some accounts need to request/enable these explicitly before `paypal.Applepay().config()` / `paypal.Googlepay().config()` will return `isEligible: true` instead of erroring. This is the most common reason a button silently doesn't appear even though the code is otherwise wired up correctly.
+3. **Apple Pay only** — Apple requires your live domain to be verified before its button will render there at all (it can still be tested on `localhost` in Safari without this, but not on a real deployed domain):
+   - In the PayPal Developer Dashboard's Apple Pay settings, download the domain association file for your environment (sandbox/live).
+   - Save it at `public/.well-known/apple-developer-merchantid-domain-association` in this repo (served automatically at that exact path — required by Apple, don't rename it) and deploy.
+   - Register the domain in the same dashboard page once the file is live.
+4. Verification limits worth knowing: Apple Pay's button only renders in Safari on a real iPhone/Mac with a card already added to Wallet — there's no way to click through the actual biometric payment sheet from a script or a non-Apple browser, so this one genuinely needs a real device test. Google Pay can be exercised more easily (Chrome, a Google account with a saved payment method), but still needs step 2 above done first, or `paypal.Googlepay().config()` fails outright rather than just reporting "not eligible."
 
 ### WhatsApp setup
 
@@ -173,10 +187,10 @@ There's intentionally no "cancel/undo" on an order approval — the confirmation
 
 1. Push this repo to GitHub and import it into [Vercel](https://vercel.com/new), pointing its **Production Branch** at `paypal-showcase` if you want this specific implementation live (rather than `main`'s Grow-link flow).
 2. Set up a [Vercel Blob store](#vercel-blob-setup) and connect it to the project.
-3. Add `DATABASE_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, `RESEND_API_KEY`, and `ADMIN_PASSWORD` (pick a real one — this is a real password on a live site now) in the Vercel project settings (point `DATABASE_URL` at your production Postgres); add `WHATSAPP_ACCESS_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` too if you've done the [WhatsApp setup](#whatsapp-setup). `NEXT_PUBLIC_SITE_URL` doesn't need to be set on Vercel — it auto-detects the deployment's own domain (see [src/lib/site-config.ts](src/lib/site-config.ts)); only set it if you want to force a custom domain before it's attached.
+3. Add `DATABASE_URL`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, `NEXT_PUBLIC_PAYPAL_CLIENT_ID`, `NEXT_PUBLIC_PAYPAL_ENV`, `RESEND_API_KEY`, and `ADMIN_PASSWORD` (pick a real one — this is a real password on a live site now) in the Vercel project settings (point `DATABASE_URL` at your production Postgres); add `WHATSAPP_ACCESS_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` too if you've done the [WhatsApp setup](#whatsapp-setup), and `GREEN_INVOICE_API_KEY`/`GREEN_INVOICE_API_SECRET`/`GREEN_INVOICE_SANDBOX` for official receipts. `NEXT_PUBLIC_SITE_URL` doesn't need to be set on Vercel — it auto-detects the deployment's own domain (see [src/lib/site-config.ts](src/lib/site-config.ts)); only set it if you want to force a custom domain before it's attached.
 4. Run `npm run db:migrate` (or `npx prisma migrate deploy`) against the production database once, then `npm run db:seed` to load your real event data.
 5. Once you have a real domain, do the [PayPal webhook setup](#paypal-webhook-setup) — it needs a live URL, so this is the one piece that can't be done before the first deploy — and add `PAYPAL_WEBHOOK_ID` to Vercel.
-6. Create a **live** PayPal app at [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live), and set `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` to its live credentials, `PAYPAL_ENV=live`, and a fresh live-app `PAYPAL_WEBHOOK_ID` in Vercel when you're ready to take real payments. Until then, leaving it on `sandbox` is deliberate for a public demo link — it lets visitors run through a full checkout without real charges.
+6. Create a **live** PayPal app at [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live), and set `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` (and their `NEXT_PUBLIC_` mirrors — see above) to its live credentials, `PAYPAL_ENV`/`NEXT_PUBLIC_PAYPAL_ENV` to `live`, and a fresh live-app `PAYPAL_WEBHOOK_ID` in Vercel when you're ready to take real payments. Until then, leaving it on `sandbox` is deliberate for a public demo link — it lets visitors run through a full checkout without real charges. If you also want Apple Pay/Google Pay live, redo their [dashboard enablement and domain verification](#apple-pay--google-pay-setup) against this live app specifically — sandbox and live are configured separately.
 
 ## Project structure
 
@@ -185,8 +199,9 @@ src/
   app/
     page.tsx                        Current event page
     past-events/page.tsx            Past events gallery
-    checkout/success/page.tsx       Captures the PayPal order, shows payment-received/confirmed state
-    api/checkout/route.ts           Creates the PayPal order
+    checkout/success/page.tsx       Fallback capture + shows payment-received/confirmed state
+    api/checkout/route.ts           Creates the DB order + PayPal order
+    api/checkout/[orderId]/capture/route.ts  Captures a PayPal order — called by paypal-checkout-buttons.tsx
     api/webhooks/paypal/route.ts    Signature-verified webhook: authoritative fulfillment + refund sync
     api/upload/route.ts             Issues Vercel Blob client-upload tokens (admin-gated)
     api/admin/events/route.ts       Create event
@@ -204,7 +219,8 @@ src/
     site-header.tsx                 Sticky (lg:+) / scrolls-away (below lg:) header with hamburger nav
     event-hero.tsx                  Title/date/location/cover image
     event-experience.tsx            Ticket list + buy panel; owns selection state and scroll-to-center
-    buy-panel.tsx                   Name/email/quantity form, talks to /api/checkout
+    buy-panel.tsx                   Name/email/quantity form; renders paypal-checkout-buttons.tsx or its own bank-transfer submit
+    paypal-checkout-buttons.tsx     Embedded PayPal/Apple Pay/Google Pay buttons — see Apple Pay / Google Pay setup
     ticket-type-card.tsx            One ticket row
     past-event-section.tsx          One past event's block in the gallery
     admin/event-form.tsx            Create/edit event form, incl. Blob upload

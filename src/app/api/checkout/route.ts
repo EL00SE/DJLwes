@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { createPayPalOrder, findApproveLink } from "@/lib/paypal";
-import { siteConfig } from "@/lib/site-config";
+import { createPayPalOrder } from "@/lib/paypal";
 
 const PHONE_PATTERN = /^\+?[0-9\s\-()]{7,20}$/;
 
@@ -98,28 +97,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ orderId: order.id });
   }
 
-  const siteUrl = siteConfig.siteUrl.replace(/\/$/, "");
-
   try {
     const paypalOrder = await createPayPalOrder({
       referenceId: order.id,
       description: `${ticketType.event.title} — ${quantity} × ${ticketType.name}`,
       amountCents: totalCents,
-      returnUrl: `${siteUrl}/checkout/success?orderId=${order.id}`,
-      cancelUrl: `${siteUrl}/?checkout=canceled`,
     });
-
-    const approveUrl = findApproveLink(paypalOrder);
-    if (!approveUrl) {
-      throw new Error("PayPal order response had no approve link");
-    }
 
     await prisma.order.update({
       where: { id: order.id },
       data: { paypalOrderId: paypalOrder.id },
     });
 
-    return NextResponse.json({ url: approveUrl });
+    // The buyer never leaves this page — src/components/paypal-checkout-buttons.tsx
+    // takes this PayPal order id and drives the rest of checkout (PayPal/
+    // Venmo buttons, Apple Pay, Google Pay) with the JS SDK, then hits
+    // /api/checkout/[orderId]/capture once the buyer approves.
+    return NextResponse.json({ orderId: order.id, paypalOrderId: paypalOrder.id });
   } catch (error) {
     // Roll back the pending order so it doesn't linger if PayPal fails.
     await prisma.order.delete({ where: { id: order.id } }).catch(() => {});

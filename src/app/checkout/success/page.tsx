@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { capturePayPalOrder } from "@/lib/paypal";
-import { fulfillOrder } from "@/lib/fulfill-order";
+import { captureAndFulfillOrder } from "@/lib/fulfill-order";
 import { orderReference, orderWithDetailsInclude } from "@/lib/orders";
 import { formatPrice } from "@/lib/format";
 import { bankTransferDetails } from "@/lib/bank-details";
@@ -27,9 +26,7 @@ function FailureState({ heading, message }: { heading: string; message: string }
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {
-  // PayPal appends `token` (its order id) and `PayerID` to whatever
-  // return_url we gave it; `orderId` is ours, added when we built that URL.
-  searchParams: Promise<{ orderId?: string; token?: string }>;
+  searchParams: Promise<{ orderId?: string }>;
 }) {
   const { orderId } = await searchParams;
 
@@ -47,20 +44,13 @@ export default async function CheckoutSuccessPage({
 
   let order = await fetchOrder();
 
+  // Normally already captured by the time the buyer lands here (see
+  // src/components/paypal-checkout-buttons.tsx, which captures before
+  // redirecting) — this is just a fallback in case that client-side call
+  // never finished (e.g. the tab closed right after approval). The
+  // webhook is the real source of truth either way.
   if (order && order.status === "PENDING" && order.paypalOrderId) {
-    try {
-      const capture = await capturePayPalOrder(order.paypalOrderId);
-      const captureId = capture.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? null;
-      if (capture.status === "COMPLETED") {
-        await fulfillOrder(order.id, captureId);
-      }
-    } catch (err) {
-      // A 422 here usually just means it was already captured (e.g. the
-      // buyer refreshed this page) — fulfillOrder is idempotent either way,
-      // so only log unexpected failures rather than surfacing an error.
-      console.error("PayPal capture failed:", err);
-    }
-    // Re-fetch since fulfillOrder may have changed the status.
+    await captureAndFulfillOrder(order);
     order = await fetchOrder();
   }
 

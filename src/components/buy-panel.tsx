@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE, countryFlagEmoji } from "@/lib/country-codes";
 import type { TicketTypeSummary } from "@/components/ticket-type-card";
+import { PayPalCheckoutButtons } from "@/components/paypal-checkout-buttons";
 
 // Matches the server-side check in api/checkout/route.ts. Instagram has no
 // public API for searching/autocompleting arbitrary handles, so this is a
@@ -35,6 +36,7 @@ export function BuyPanel({
   const [phoneLocal, setPhoneLocal] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const selectedTicketType = useMemo(
     () => ticketTypes.find((t) => t.id === selectedTicketTypeId) ?? null,
@@ -56,8 +58,44 @@ export function BuyPanel({
   const maxQuantity = selectedTicketType ? Math.min(10, selectedTicketType.quantityRemaining) : 1;
   const total = selectedTicketType ? selectedTicketType.priceCents * quantity : 0;
 
+  function goToSuccessPage(orderId: string) {
+    window.location.href = `/checkout/success?orderId=${orderId}`;
+  }
+
+  /** Builds the checkout request body for the PayPal/Apple Pay/Google Pay
+   * buttons (see paypal-checkout-buttons.tsx) — called fresh at the
+   * moment the buyer commits to a wallet, so it always reflects whatever
+   * is currently in the form. reportValidity() re-runs the same required-
+   * field checks the (bank transfer) form's native submit would, since
+   * this path never actually submits the <form>. */
+  function getCheckout() {
+    if (!selectedTicketType || !formRef.current?.reportValidity()) return null;
+    const phone = contactMethod === "WHATSAPP" ? `${countryDialCode} ${phoneLocal.trim()}`.trim() : "";
+    return {
+      payload: {
+        eventId,
+        ticketTypeId: selectedTicketType.id,
+        quantity,
+        name,
+        instagram,
+        contactMethod,
+        email,
+        phone,
+        paymentMethod: "PAYPAL" as const,
+      },
+      totalCents: total,
+      description: `${eventTitle} — ${quantity} × ${selectedTicketType.name}`,
+    };
+  }
+
+  /** Bank transfer only — PayPal/Apple Pay/Google Pay never submit this
+   * form; they hand off to /api/checkout on their own (see getCheckout). */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Guards against an Enter-key press submitting the form while PayPal
+    // is selected — that path has no submit button and is handled
+    // entirely by PayPalCheckoutButtons instead (see getCheckout above).
+    if (paymentMethod !== "BANK_TRANSFER") return;
     if (!selectedTicketType) {
       setError("Pick a ticket type to continue.");
       return;
@@ -79,19 +117,14 @@ export function BuyPanel({
           contactMethod,
           email,
           phone,
-          paymentMethod,
+          paymentMethod: "BANK_TRANSFER",
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error ?? "Something went wrong. Please try again.");
       }
-      // PayPal: `url` is PayPal's own hosted approval page. Bank transfer:
-      // there's nothing to redirect to *at* — send the buyer to the same
-      // success page a PayPal buyer lands on, which already knows how to
-      // show an "awaiting bank transfer" state for a PENDING order paid
-      // this way (see checkout/success/page.tsx).
-      window.location.href = data.url ?? `/checkout/success?orderId=${data.orderId}`;
+      goToSuccessPage(data.orderId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setIsSubmitting(false);
@@ -113,7 +146,7 @@ export function BuyPanel({
           Select a ticket type on the left to get started.
         </p>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
+        <form ref={formRef} onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
           <div className="flex items-center justify-between rounded-2xl border border-line bg-bg/60 px-4 py-3">
             <div>
               <p className="text-sm font-medium text-ink">{selectedTicketType.name}</p>
@@ -321,24 +354,32 @@ export function BuyPanel({
 
           {error && <p className="text-sm text-magenta">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {isSubmitting
-              ? paymentMethod === "PAYPAL"
-                ? "Redirecting to payment…"
-                : "Submitting…"
-              : paymentMethod === "PAYPAL"
-                ? "Continue to Payment"
-                : "Request Bank Transfer"}
-          </button>
-          <p className="text-center font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-            {paymentMethod === "PAYPAL"
-              ? "Secure checkout powered by PayPal"
-              : "No payment taken yet — you'll see our bank details next"}
-          </p>
+          {paymentMethod === "PAYPAL" ? (
+            <>
+              <PayPalCheckoutButtons
+                merchantDisplayName="DJ Lwes"
+                getCheckout={getCheckout}
+                onError={setError}
+                onSuccess={goToSuccessPage}
+              />
+              <p className="text-center font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
+                Secure checkout powered by PayPal
+              </p>
+            </>
+          ) : (
+            <>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {isSubmitting ? "Submitting…" : "Request Bank Transfer"}
+              </button>
+              <p className="text-center font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
+                No payment taken yet — you&apos;ll see our bank details next
+              </p>
+            </>
+          )}
         </form>
       )}
     </div>

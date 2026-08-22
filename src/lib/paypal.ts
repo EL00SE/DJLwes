@@ -60,18 +60,19 @@ export type PayPalOrder = {
 };
 
 /**
- * Creates a PayPal order for a single line item and returns it — including
- * the `links` array, which has the `approve` URL to redirect the buyer to.
+ * Creates a PayPal order for a single line item and returns it. Checkout
+ * itself happens entirely client-side via the PayPal JS SDK (standard
+ * PayPal/Venmo buttons, plus Apple Pay/Google Pay — see
+ * src/components/paypal-checkout-buttons.tsx), which never navigates away
+ * from the page, so there's no return/cancel URL to configure here.
  */
 export async function createPayPalOrder(params: {
   referenceId: string;
   description: string;
   amountCents: number;
   currency?: string;
-  returnUrl: string;
-  cancelUrl: string;
 }): Promise<PayPalOrder> {
-  const { referenceId, description, amountCents, returnUrl, cancelUrl } = params;
+  const { referenceId, description, amountCents } = params;
   const currency = params.currency ?? "USD";
 
   return paypalFetch("/v2/checkout/orders", {
@@ -94,9 +95,6 @@ export async function createPayPalOrder(params: {
       ],
       application_context: {
         brand_name: "DJ Lwes",
-        user_action: "PAY_NOW",
-        return_url: returnUrl,
-        cancel_url: cancelUrl,
       },
     }),
   });
@@ -109,10 +107,6 @@ export async function getPayPalOrder(orderId: string): Promise<PayPalOrder> {
 /** Captures an approved order. Safe to call once per order — PayPal 422s on a repeat capture, which callers should treat as "already captured". */
 export async function capturePayPalOrder(orderId: string): Promise<PayPalOrder> {
   return paypalFetch(`/v2/checkout/orders/${orderId}/capture`, { method: "POST" });
-}
-
-export function findApproveLink(order: PayPalOrder): string | null {
-  return order.links.find((link) => link.rel === "approve")?.href ?? null;
 }
 
 /**
