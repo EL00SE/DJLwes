@@ -1,14 +1,12 @@
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { parseLines } from "@/lib/format";
 
 /** Door policy/requirements (e.g. "Mixed groups only", ID rules, age
  * limits) — shown before the Buy Tickets button so a buyer sees it
  * before clicking through to Grow's checkout, which carries none of
  * this context on its own. Hidden entirely when unset. */
 export function EntryRequirementsSection({ entryRequirements }: { entryRequirements: string | null }) {
-  const rules = (entryRequirements ?? "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const rules = parseLines(entryRequirements);
 
   if (rules.length === 0) return null;
 

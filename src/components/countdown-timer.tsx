@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { deferOnce } from "@/lib/defer";
 
 function getRemaining(target: number) {
   const diff = target - Date.now();
@@ -46,10 +47,10 @@ export function CountdownTimer({ date }: { date: Date }) {
     // The interval alone wouldn't paint real numbers until a second in —
     // a deferred (not synchronous) first tick gets that first paint
     // without the interval's usual 1s delay.
-    const timeoutId = setTimeout(tick, 0);
+    const cancelFirstTick = deferOnce(tick);
     const interval = setInterval(tick, 1000);
     return () => {
-      clearTimeout(timeoutId);
+      cancelFirstTick();
       clearInterval(interval);
     };
   }, [target]);

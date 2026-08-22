@@ -62,7 +62,7 @@ export default async function AdminPage() {
         take: 20,
         include: { event: true },
       }),
-      prisma.notifySignup.findMany({ orderBy: { createdAt: "desc" } }),
+      prisma.notifySignup.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
     ]);
 
   return (

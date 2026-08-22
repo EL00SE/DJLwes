@@ -1,14 +1,19 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
-/** The event shown on the homepage — the one marked `isActive`. */
-export function getActiveEvent() {
+/** The event shown on the homepage — the one marked `isActive`. Wrapped
+ * in React's `cache()` because the homepage calls this twice per request
+ * (once from `generateMetadata`, once from the page component itself) —
+ * without it, that's two separate round trips to the same query on every
+ * single page load, since Next only dedupes `fetch()` calls automatically. */
+export const getActiveEvent = cache(function getActiveEvent() {
   return prisma.event.findFirst({
     where: { isActive: true },
     include: {
       ticketTypes: { orderBy: { priceCents: "asc" } },
     },
   });
-}
+});
 
 /** Every event that isn't the active one, newest first, for the gallery. */
 export function getPastEvents() {

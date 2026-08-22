@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { deferOnce } from "@/lib/defer";
 
 /** Fades + slides a section in the first time it scrolls into view.
  * Plain IntersectionObserver rather than a library — this is the only
@@ -20,12 +21,9 @@ export function ScrollReveal({
     const el = ref.current;
     if (!el) return;
 
-    // Respect reduced-motion preferences by just showing content immediately
-    // (deferred via setTimeout rather than called synchronously, same
-    // reasoning as the observer callback below).
+    // Respect reduced-motion preferences by just showing content immediately.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      const timeoutId = setTimeout(() => setIsVisible(true), 0);
-      return () => clearTimeout(timeoutId);
+      return deferOnce(() => setIsVisible(true));
     }
 
     const observer = new IntersectionObserver(
