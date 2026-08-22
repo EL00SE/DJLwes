@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/app/admin/actions";
 import { toEventLocalDateTimeInputValue } from "@/lib/format";
 import { EventForm } from "@/components/admin/event-form";
+import { TicketTypesManager } from "@/components/admin/ticket-types-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,10 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   await requireAdmin();
   const { id } = await params;
 
-  const event = await prisma.event.findUnique({ where: { id } });
+  const event = await prisma.event.findUnique({
+    where: { id },
+    include: { ticketTypes: { orderBy: { priceCents: "asc" } } },
+  });
   if (!event) {
     notFound();
   }
@@ -29,9 +33,23 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           coverImage: event.coverImage,
           buyLink: event.buyLink ?? "",
           lineup: event.lineup ?? "",
+          entryRequirements: event.entryRequirements ?? "",
           isActive: event.isActive,
         }}
       />
+
+      <div className="mt-12 border-t border-line pt-8">
+        <h2 className="mb-2 font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
+          Ticket tiers
+        </h2>
+        <p className="mb-4 text-sm text-ink-muted">
+          Informational only — actual payment happens on Grow, so &quot;remaining&quot; here isn&apos;t
+          decremented automatically by real sales. Update it by hand to keep it roughly in sync with
+          what Grow shows, or leave every tier&apos;s remaining count as-is if you&apos;d rather not
+          bother with it.
+        </p>
+        <TicketTypesManager eventId={event.id} initial={event.ticketTypes} />
+      </div>
     </div>
   );
 }

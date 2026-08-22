@@ -9,6 +9,8 @@ import { EventHero } from "@/components/event-hero";
 // event in /admin/events. See buy-tickets-section.tsx.
 import { BuyTicketsSection } from "@/components/buy-tickets-section";
 import { LineupSection } from "@/components/lineup-section";
+import { TicketTiersInfo } from "@/components/ticket-tiers-info";
+import { EntryRequirementsSection } from "@/components/entry-requirements-section";
 import { HomepageGalleryTeaser } from "@/components/homepage-gallery-teaser";
 import { AboutSection } from "@/components/about-section";
 import { NotifySignupForm } from "@/components/notify-signup-form";
@@ -82,6 +84,8 @@ export default async function HomePage() {
         coverImage={event.coverImage}
       />
       <LineupSection lineup={event.lineup} />
+      <TicketTiersInfo ticketTypes={event.ticketTypes} />
+      <EntryRequirementsSection entryRequirements={event.entryRequirements} />
       <BuyTicketsSection buyLink={event.buyLink} />
       {pastEventWithGallery && (
         <HomepageGalleryTeaser

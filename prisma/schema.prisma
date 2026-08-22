@@ -32,6 +32,12 @@ model Event {
   /// Null/empty hides the lineup block on the homepage entirely.
   lineup String?
 
+  /// Freeform entry/door requirements, one per line (e.g. "Mixed groups
+  /// only after 1am", "Valid ID required", "21+"). Shown to buyers before
+  /// they click through to Grow, since Grow's own checkout page doesn't
+  /// carry this context. Null/empty hides the section entirely.
+  entryRequirements String?
+
   ticketTypes   TicketType[]
   galleryItems  GalleryItem[]
   orders        Order[]
