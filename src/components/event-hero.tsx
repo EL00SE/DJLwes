@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { formatEventDate, formatEventTime } from "@/lib/format";
 import { siteConfig } from "@/lib/site-config";
+import { CountdownTimer } from "@/components/countdown-timer";
 
 export function EventHero({
   title,
@@ -50,6 +51,10 @@ export function EventHero({
               <dd className="mt-1 text-sm font-medium text-ink">{location}</dd>
             </div>
           </dl>
+
+          <div className="mt-8">
+            <CountdownTimer date={date} />
+          </div>
         </div>
 
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl border border-line-strong shadow-[0_0_60px_-15px_rgba(177,59,255,0.45)] sm:aspect-[5/4] lg:aspect-[4/5]">

@@ -31,6 +31,8 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           dateLocalValue: toEventLocalDateTimeInputValue(event.date),
           location: event.location,
           coverImage: event.coverImage,
+          lineup: event.lineup ?? "",
+          entryRequirements: event.entryRequirements ?? "",
           isActive: event.isActive,
         }}
       />

@@ -13,6 +13,8 @@ export type EventFormInitialValues = {
   dateLocalValue: string;
   location: string;
   coverImage: string;
+  lineup: string;
+  entryRequirements: string;
   isActive: boolean;
 };
 
@@ -26,6 +28,8 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
   const [dateLocalValue, setDateLocalValue] = useState(initial?.dateLocalValue ?? "");
   const [location, setLocation] = useState(initial?.location ?? "");
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? "");
+  const [lineup, setLineup] = useState(initial?.lineup ?? "");
+  const [entryRequirements, setEntryRequirements] = useState(initial?.entryRequirements ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? false);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -62,7 +66,16 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
     setError(null);
     setIsSubmitting(true);
     try {
-      const body = { title, description, date: dateLocalValue, location, coverImage, isActive };
+      const body = {
+        title,
+        description,
+        date: dateLocalValue,
+        location,
+        coverImage,
+        lineup,
+        entryRequirements,
+        isActive,
+      };
       const res = await fetch(isEdit ? `/api/admin/events/${initial!.id}` : "/api/admin/events", {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,6 +146,40 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
           />
         </label>
       </div>
+
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+          Lineup <span className="normal-case text-ink-faint">(optional, one act per line)</span>
+        </span>
+        <textarea
+          rows={3}
+          value={lineup}
+          onChange={(e) => setLineup(e.target.value)}
+          placeholder={"Nadia K\nJonas R"}
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+        />
+        <span className="text-xs text-ink-faint">
+          Leave blank to hide the lineup section on the homepage entirely.
+        </span>
+      </label>
+
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+          Entry requirements{" "}
+          <span className="normal-case text-ink-faint">(optional, one rule per line)</span>
+        </span>
+        <textarea
+          rows={3}
+          value={entryRequirements}
+          onChange={(e) => setEntryRequirements(e.target.value)}
+          placeholder={"Mixed groups only after 1am\nValid ID required\n21+"}
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+        />
+        <span className="text-xs text-ink-faint">
+          Shown to buyers before checkout — door policies, ID rules, age limits, that kind of
+          thing. Leave blank to hide the section entirely.
+        </span>
+      </label>
 
       <div className="flex flex-col gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">Cover image</span>

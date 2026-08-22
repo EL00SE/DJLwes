@@ -7,6 +7,8 @@ export const eventFormSchema = z.object({
   date: z.string().trim().min(1, "Date & time are required"),
   location: z.string().trim().min(1, "Location is required").max(200),
   coverImage: z.string().trim().min(1, "A cover image is required"),
+  lineup: z.string().trim().max(2000).optional().or(z.literal("")),
+  entryRequirements: z.string().trim().max(2000).optional().or(z.literal("")),
   isActive: z.boolean().optional(),
 });
 

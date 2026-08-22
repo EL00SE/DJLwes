@@ -31,7 +31,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       { status: 400 }
     );
   }
-  const { title, description, date, location, coverImage, isActive } = parsed.data;
+  const { title, description, date, location, coverImage, lineup, entryRequirements, isActive } =
+    parsed.data;
 
   let parsedDate: Date;
   try {
@@ -54,6 +55,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       date: parsedDate,
       location,
       coverImage,
+      lineup: lineup || null,
+      entryRequirements: entryRequirements || null,
       ...(isActive ? {} : { isActive: false }),
     },
   });

@@ -21,6 +21,19 @@ export function getPastEvents() {
   });
 }
 
+/** The single most recent past event that actually has photos/video —
+ * used for the homepage's "last time" teaser, distinct from the full
+ * /past-events archive (getPastEvents), which returns every past event. */
+export function getMostRecentPastEventWithGallery() {
+  return prisma.event.findFirst({
+    where: { isActive: false, galleryItems: { some: {} } },
+    orderBy: { date: "desc" },
+    include: {
+      galleryItems: { orderBy: { sortOrder: "asc" }, take: 6 },
+    },
+  });
+}
+
 export function getEventById(eventId: string) {
   return prisma.event.findUnique({
     where: { id: eventId },
