@@ -21,6 +21,7 @@ const checkoutSchema = z
     contactMethod: z.enum(["EMAIL", "WHATSAPP"]),
     email: z.string().trim().email("A valid email is required").optional().or(z.literal("")),
     phone: z.string().trim().regex(PHONE_PATTERN, "A valid phone number is required").optional().or(z.literal("")),
+    paymentMethod: z.enum(["PAYPAL", "BANK_TRANSFER"]).default("PAYPAL"),
   })
   .superRefine((data, ctx) => {
     if (data.contactMethod === "EMAIL" && !data.email) {
@@ -46,7 +47,8 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { eventId, ticketTypeId, quantity, name, instagram, contactMethod, email, phone } = parsed.data;
+  const { eventId, ticketTypeId, quantity, name, instagram, contactMethod, email, phone, paymentMethod } =
+    parsed.data;
 
   const ticketType = await prisma.ticketType.findUnique({
     where: { id: ticketTypeId },
@@ -76,6 +78,7 @@ export async function POST(request: Request) {
       customerEmail: contactMethod === "EMAIL" ? email : null,
       customerPhone: contactMethod === "WHATSAPP" ? phone : null,
       status: "PENDING",
+      paymentMethod,
       totalCents,
       items: {
         create: {
@@ -86,6 +89,14 @@ export async function POST(request: Request) {
       },
     },
   });
+
+  // No PayPal order to create — the buyer transfers by hand, and the
+  // business owner confirms it arrived from /admin (see
+  // confirmBankTransferAction). Ticket inventory isn't reserved until
+  // then, same as a PayPal order isn't reserved until it's captured.
+  if (paymentMethod === "BANK_TRANSFER") {
+    return NextResponse.json({ orderId: order.id });
+  }
 
   const siteUrl = siteConfig.siteUrl.replace(/\/$/, "");
 

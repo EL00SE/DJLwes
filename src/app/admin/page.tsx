@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatDateTime, formatPrice } from "@/lib/format";
-import { orderWithDetailsInclude } from "@/lib/orders";
+import { orderReference, orderWithDetailsInclude } from "@/lib/orders";
 import {
+  cancelBankTransferRequestAction,
+  confirmBankTransferAction,
   confirmOrderAction,
   declineOrderAction,
   logoutAdminAction,
@@ -32,38 +34,56 @@ export default async function AdminPage() {
   twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
 
   // Independent queries — run together rather than one after another.
-  const [pendingOrders, unpaidOrders, recentOrders, pendingGuestRequests, recentGuestRequests, notifySignups] =
-    await Promise.all([
-      prisma.order.findMany({
-        where: { status: "PAID" },
-        orderBy: { createdAt: "asc" },
-        include: orderWithDetailsInclude,
-      }),
-      prisma.order.findMany({
-        where: { status: "PENDING", createdAt: { gte: twoDaysAgo } },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        include: orderWithDetailsInclude,
-      }),
-      prisma.order.findMany({
-        where: { status: { in: ["CONFIRMED", "REFUNDED", "FAILED", "CANCELED"] } },
-        orderBy: { updatedAt: "desc" },
-        take: 20,
-        include: orderWithDetailsInclude,
-      }),
-      prisma.guestRequest.findMany({
-        where: { status: "PENDING" },
-        orderBy: { createdAt: "asc" },
-        include: { event: true },
-      }),
-      prisma.guestRequest.findMany({
-        where: { status: { in: ["APPROVED", "DECLINED"] } },
-        orderBy: { updatedAt: "desc" },
-        take: 20,
-        include: { event: true },
-      }),
-      prisma.notifySignup.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
-    ]);
+  const [
+    pendingOrders,
+    pendingBankTransfers,
+    unpaidOrders,
+    recentOrders,
+    pendingGuestRequests,
+    recentGuestRequests,
+    notifySignups,
+  ] = await Promise.all([
+    prisma.order.findMany({
+      where: { status: "PAID" },
+      orderBy: { createdAt: "asc" },
+      include: orderWithDetailsInclude,
+    }),
+    // Bank transfers awaiting the owner's own manual confirmation — shown
+    // in their own section (not "Started, not paid" below, which is
+    // purely informational) since these need an actual action. No 48h
+    // cutoff: an unconfirmed transfer request isn't "abandoned" the way
+    // an unopened PayPal tab is, so it stays actionable longer.
+    prisma.order.findMany({
+      where: { status: "PENDING", paymentMethod: "BANK_TRANSFER" },
+      orderBy: { createdAt: "asc" },
+      take: 20,
+      include: orderWithDetailsInclude,
+    }),
+    prisma.order.findMany({
+      where: { status: "PENDING", paymentMethod: "PAYPAL", createdAt: { gte: twoDaysAgo } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: orderWithDetailsInclude,
+    }),
+    prisma.order.findMany({
+      where: { status: { in: ["CONFIRMED", "REFUNDED", "FAILED", "CANCELED"] } },
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+      include: orderWithDetailsInclude,
+    }),
+    prisma.guestRequest.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "asc" },
+      include: { event: true },
+    }),
+    prisma.guestRequest.findMany({
+      where: { status: { in: ["APPROVED", "DECLINED"] } },
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+      include: { event: true },
+    }),
+    prisma.notifySignup.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-12 sm:px-8">
@@ -124,6 +144,65 @@ export default async function AdminPage() {
       </details>
 
       <h2 className="mb-4 font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
+        Bank transfers awaiting confirmation ({pendingBankTransfers.length})
+      </h2>
+      {pendingBankTransfers.length === 0 ? (
+        <p className="mb-12 text-ink-muted">Nothing waiting on a bank transfer right now.</p>
+      ) : (
+        <div className="mb-12 flex flex-col gap-4">
+          {pendingBankTransfers.map((order) => (
+            <div key={order.id} className="card-edge rounded-2xl border border-line p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="font-display text-2xl tracking-wide text-ink">{order.customerName}</p>
+                  <a
+                    href={`https://instagram.com/${order.customerInstagram.replace(/^@/, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-sm text-accent-bright hover:underline"
+                  >
+                    @{order.customerInstagram.replace(/^@/, "")}
+                  </a>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    <ContactLine email={order.customerEmail} phone={order.customerPhone} />
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-display text-2xl text-ink">{formatPrice(order.totalCents)}</p>
+                  <p className="font-mono text-xs text-accent-bright">
+                    Ref {orderReference(order.id)}
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-3 text-sm text-ink-muted">
+                <span className="text-ink">{order.event.title}</span> — {ticketSummary(order.items)}
+              </p>
+
+              <div className="mt-4 flex gap-2">
+                <form action={confirmBankTransferAction.bind(null, order.id)}>
+                  <button
+                    type="submit"
+                    className="rounded-full bg-accent px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
+                  >
+                    Mark as Received
+                  </button>
+                </form>
+                <form action={cancelBankTransferRequestAction.bind(null, order.id)}>
+                  <button
+                    type="submit"
+                    className="rounded-full border border-line-strong px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-ink-muted transition-colors hover:border-magenta hover:text-magenta"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <h2 className="mb-4 font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
         Awaiting your approval ({pendingOrders.length})
       </h2>
 
@@ -135,7 +214,14 @@ export default async function AdminPage() {
             <div key={order.id} className="card-edge rounded-2xl border border-line p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="font-display text-2xl tracking-wide text-ink">{order.customerName}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-display text-2xl tracking-wide text-ink">{order.customerName}</p>
+                    {order.paymentMethod === "BANK_TRANSFER" && (
+                      <span className="rounded-full bg-accent-dim px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-accent-bright">
+                        Bank transfer
+                      </span>
+                    )}
+                  </div>
                   <a
                     href={`https://instagram.com/${order.customerInstagram.replace(/^@/, "")}`}
                     target="_blank"
@@ -172,7 +258,7 @@ export default async function AdminPage() {
                     type="submit"
                     className="rounded-full border border-line-strong px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-ink-muted transition-colors hover:border-magenta hover:text-magenta"
                   >
-                    Decline &amp; Refund
+                    {order.paymentMethod === "BANK_TRANSFER" ? "Decline (refund manually)" : "Decline & Refund"}
                   </button>
                 </form>
               </div>

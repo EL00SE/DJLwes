@@ -103,10 +103,22 @@ enum OrderStatus {
   REFUNDED
 }
 
+enum PaymentMethod {
+  PAYPAL
+  /// No automatic capture/webhook exists for this method — the order sits
+  /// PENDING (with bank details shown to the buyer) until the business
+  /// owner manually confirms the transfer landed, at which point it's
+  /// treated exactly like a PayPal capture (see confirmBankTransferPayment
+  /// in src/lib/fulfill-order.ts) and flows through the same
+  /// approve/decline pipeline in /admin from there.
+  BANK_TRANSFER
+}
+
 /// One checkout attempt/purchase. Created as PENDING when the buyer starts
-/// checkout, flipped to PAID once their PayPal order is captured (ticket
-/// quantities are decremented at that point), then to CONFIRMED or
-/// REFUNDED once the business owner reviews it in /admin.
+/// checkout, flipped to PAID once payment is confirmed (a PayPal capture,
+/// or a business owner manually confirming a bank transfer arrived —
+/// ticket quantities are decremented at that point either way), then to
+/// CONFIRMED or REFUNDED once the business owner reviews it in /admin.
 model Order {
   id           String @id @default(cuid())
   eventId      String
@@ -123,7 +135,8 @@ model Order {
   customerEmail String?
   customerPhone String?
 
-  status OrderStatus @default(PENDING)
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod @default(PAYPAL)
 
   /// Set once the order-confirmation email/WhatsApp message has actually
   /// been sent (on admin approval), so it's never sent twice.

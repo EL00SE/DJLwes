@@ -2,8 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
 import { fulfillOrder } from "@/lib/fulfill-order";
-import { orderWithDetailsInclude } from "@/lib/orders";
+import { orderReference, orderWithDetailsInclude } from "@/lib/orders";
 import { formatPrice } from "@/lib/format";
+import { bankTransferDetails } from "@/lib/bank-details";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,68 @@ export default async function CheckoutSuccessPage({
     );
   }
 
+  if (order.paymentMethod === "BANK_TRANSFER" && order.status === "PENDING") {
+    return (
+      <div className="mx-auto flex max-w-xl flex-col items-center gap-6 px-5 py-24 text-center">
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-bright">
+          Request received
+        </p>
+        <h1 className="text-glow font-display text-5xl tracking-wide text-ink sm:text-6xl">
+          Send Your Transfer
+        </h1>
+        <p className="text-ink-muted">
+          Transfer {formatPrice(order.totalCents)} to the account below, including the reference
+          so we can match it to your order — we&apos;ll confirm it by hand and reach out via{" "}
+          {order.customerEmail ? "email" : "WhatsApp"} once we see it.
+        </p>
+
+        <div className="card-edge mt-2 w-full rounded-3xl border border-line p-6 text-left sm:p-8">
+          <dl className="flex flex-col gap-3 text-sm">
+            <div className="flex items-center justify-between">
+              <dt className="text-ink-faint">Account holder</dt>
+              <dd className="text-ink">{bankTransferDetails.accountHolder}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-ink-faint">Bank</dt>
+              <dd className="text-ink">{bankTransferDetails.bankName}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-ink-faint">Branch</dt>
+              <dd className="text-ink">{bankTransferDetails.branch}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-ink-faint">Account number</dt>
+              <dd className="text-ink">{bankTransferDetails.accountNumber}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-ink-faint">IBAN</dt>
+              <dd className="text-ink">{bankTransferDetails.iban}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-ink-faint">SWIFT</dt>
+              <dd className="text-ink">{bankTransferDetails.swift}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 flex items-center justify-between border-t border-line pt-4">
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
+              Reference (include this!)
+            </span>
+            <span className="font-display text-2xl tracking-wide text-accent-bright">
+              {orderReference(order.id)}
+            </span>
+          </div>
+        </div>
+
+        <Link
+          href="/"
+          className="mt-2 rounded-full border border-accent-dim px-6 py-2.5 font-mono text-xs uppercase tracking-[0.2em] text-accent-bright transition-colors hover:bg-accent hover:text-white"
+        >
+          Back Home
+        </Link>
+      </div>
+    );
+  }
+
   if (order.status === "REFUNDED") {
     return (
       <FailureState
@@ -103,7 +166,7 @@ export default async function CheckoutSuccessPage({
           {order.customerEmail ? "email" : "WhatsApp"} shortly.
         </p>
         <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-          Order #{order.id.slice(-8).toUpperCase()}
+          Order #{orderReference(order.id)}
         </p>
         <Link
           href="/"
@@ -161,7 +224,7 @@ export default async function CheckoutSuccessPage({
           <span className="font-display text-3xl text-ink">{formatPrice(order.totalCents)}</span>
         </div>
         <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-          Order #{order.id.slice(-8).toUpperCase()} &middot; {order.customerName}
+          Order #{orderReference(order.id)} &middot; {order.customerName}
         </p>
       </div>
 

@@ -21,6 +21,14 @@ export function isTerminalOrderStatus(status: OrderStatus): boolean {
   return TERMINAL_ORDER_STATUSES.includes(status);
 }
 
+/** A short, human-typeable stand-in for an order's full id — shown to
+ * buyers as their "order number", and used as the reference a bank-
+ * transfer buyer includes in their transfer memo so it can be matched
+ * back to the right order. Just the last 8 characters, uppercased. */
+export function orderReference(orderId: string): string {
+  return orderId.slice(-8).toUpperCase();
+}
+
 /**
  * Atomically transitions an order from one of `fromStatuses` to `toStatus`
  * via a single conditional UPDATE, so concurrent callers (a double-click,

@@ -28,6 +28,7 @@ export function BuyPanel({
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState("");
   const [instagram, setInstagram] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"PAYPAL" | "BANK_TRANSFER">("PAYPAL");
   const [contactMethod, setContactMethod] = useState<"EMAIL" | "WHATSAPP">("EMAIL");
   const [email, setEmail] = useState("");
   const [countryDialCode, setCountryDialCode] = useState(DEFAULT_COUNTRY_DIAL_CODE);
@@ -78,13 +79,19 @@ export function BuyPanel({
           contactMethod,
           email,
           phone,
+          paymentMethod,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error ?? "Something went wrong. Please try again.");
       }
-      window.location.href = data.url;
+      // PayPal: `url` is PayPal's own hosted approval page. Bank transfer:
+      // there's nothing to redirect to *at* — send the buyer to the same
+      // success page a PayPal buyer lands on, which already knows how to
+      // show an "awaiting bank transfer" state for a PENDING order paid
+      // this way (see checkout/success/page.tsx).
+      window.location.href = data.url ?? `/checkout/success?orderId=${data.orderId}`;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setIsSubmitting(false);
@@ -271,6 +278,40 @@ export function BuyPanel({
             )}
           </div>
 
+          <div className="flex flex-col gap-1.5 text-sm">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+              Pay with
+            </span>
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-bg/60 p-1">
+              {(
+                [
+                  { value: "PAYPAL", label: "PayPal" },
+                  { value: "BANK_TRANSFER", label: "Bank Transfer" },
+                ] as const
+              ).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setPaymentMethod(option.value)}
+                  aria-pressed={paymentMethod === option.value}
+                  className={`rounded-lg py-2 font-mono text-xs uppercase tracking-[0.1em] transition-colors ${
+                    paymentMethod === option.value
+                      ? "bg-accent text-white"
+                      : "text-ink-muted hover:text-ink"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {paymentMethod === "BANK_TRANSFER" && (
+              <p className="text-xs text-ink-faint">
+                You&apos;ll get our bank details and a reference to include — we confirm receipt by
+                hand, so this takes a little longer than PayPal.
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center justify-between border-t border-line pt-4">
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
               Total
@@ -285,10 +326,18 @@ export function BuyPanel({
             disabled={isSubmitting}
             className="rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {isSubmitting ? "Redirecting to payment…" : "Continue to Payment"}
+            {isSubmitting
+              ? paymentMethod === "PAYPAL"
+                ? "Redirecting to payment…"
+                : "Submitting…"
+              : paymentMethod === "PAYPAL"
+                ? "Continue to Payment"
+                : "Request Bank Transfer"}
           </button>
           <p className="text-center font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-            Secure checkout powered by PayPal
+            {paymentMethod === "PAYPAL"
+              ? "Secure checkout powered by PayPal"
+              : "No payment taken yet — you'll see our bank details next"}
           </p>
         </form>
       )}

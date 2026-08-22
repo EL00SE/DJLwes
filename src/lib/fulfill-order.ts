@@ -117,3 +117,52 @@ export async function markOrderRefundedExternally(orderId: string): Promise<void
     }
   });
 }
+
+/**
+ * The bank-transfer equivalent of a PayPal capture: called from /admin
+ * when the business owner has actually checked their bank statement and
+ * seen the transfer arrive. Unlike PayPal, there's no automatic capture
+ * event to trigger this — a human is standing in for it — so this claims
+ * the PENDING→PAID transition atomically first (the same "only one caller
+ * wins" guarantee as everywhere else in the app that claims a status),
+ * and only then reserves inventory. If inventory ran out in the meantime
+ * (e.g. two buyers both said they'd transfer for the last ticket, and
+ * only one gets confirmed), there's no automatic refund possible for a
+ * bank transfer — the order is left FAILED for the owner to refund by
+ * hand, the same "needs a human" outcome PayPal's own oversell path
+ * falls back to when it can't auto-refund either.
+ */
+export async function confirmBankTransferPayment(
+  orderId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const claimed = await claimOrderStatus(orderId, ["PENDING"], "PAID");
+  if (!claimed) {
+    return { ok: false, error: "This order isn't awaiting a bank transfer anymore." };
+  }
+
+  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
+  if (!order) {
+    return { ok: false, error: "Order not found." };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        const updated = await tx.ticketType.updateMany({
+          where: { id: item.ticketTypeId, quantityRemaining: { gte: item.quantity } },
+          data: { quantityRemaining: { decrement: item.quantity } },
+        });
+        if (updated.count === 0) throw new OversoldError();
+      }
+    });
+  } catch (err) {
+    if (!(err instanceof OversoldError)) throw err;
+    await prisma.order.update({ where: { id: orderId }, data: { status: "FAILED" } });
+    return {
+      ok: false,
+      error: "Not enough tickets remain for this order — decline it and refund the buyer manually.",
+    };
+  }
+
+  return { ok: true };
+}

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { refundPayPalCapture } from "@/lib/paypal";
 import { sendTicketConfirmation } from "@/lib/notify";
+import { confirmBankTransferPayment } from "@/lib/fulfill-order";
 import { claimOrderStatus, orderWithDetailsInclude } from "@/lib/orders";
 import {
   ADMIN_SESSION_COOKIE,
@@ -81,14 +82,19 @@ export async function confirmOrderAction(orderId: string) {
   revalidatePath("/admin");
 }
 
-/** Declines a PAID order: refunds it via PayPal and releases the inventory. */
+/** Declines a PAID order: refunds it via PayPal (if that's how it was
+ * paid) and releases the inventory either way — the buyer isn't getting
+ * the ticket regardless of how (or whether) the money itself gets back
+ * to them, so the ticket goes back into stock even on the bank-transfer
+ * path, which has no refund API to call and needs the owner to actually
+ * wire the money back themselves, outside this app. */
 export async function declineOrderAction(orderId: string) {
   await requireAdmin();
 
   // Claim it as REFUNDED optimistically — this is what wins the race
-  // against a concurrent Approve. Corrected to FAILED below if the refund
-  // itself doesn't actually go through, so the DB never reports a refund
-  // that didn't happen.
+  // against a concurrent Approve. Corrected to FAILED below if a PayPal
+  // refund was expected but didn't actually go through, so the DB never
+  // reports a refund that didn't happen.
   if (!(await claimOrderStatus(orderId, ["PAID"], "REFUNDED"))) {
     revalidatePath("/admin");
     return;
@@ -103,9 +109,32 @@ export async function declineOrderAction(orderId: string) {
     return;
   }
 
+  const releaseInventory = () =>
+    prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        await tx.ticketType.update({
+          where: { id: item.ticketTypeId },
+          data: { quantityRemaining: { increment: item.quantity } },
+        });
+      }
+    });
+
+  if (order.paymentMethod === "BANK_TRANSFER") {
+    // Nothing left for this app to do automatically — the ticket is
+    // released, and the REFUNDED status stands, but the owner still has
+    // to actually send the money back themselves.
+    await releaseInventory();
+    console.error(`Bank-transfer order ${orderId} declined — refund the buyer manually.`);
+    revalidatePath("/admin");
+    return;
+  }
+
   if (!order.paypalCaptureId) {
-    // No capture id means we can't actually verify/issue a refund — don't
-    // let the order sit marked REFUNDED when nothing was refunded.
+    // No capture id means we can't actually verify/issue a PayPal
+    // refund — don't let the order sit marked REFUNDED when nothing was
+    // refunded. (Inventory still isn't released here: unlike the bank-
+    // transfer case above, this signals something is actually wrong with
+    // the order's own records, not just "no API to call.")
     await prisma.order.update({ where: { id: orderId }, data: { status: "FAILED" } });
     console.error(`Order ${orderId} declined but has no paypalCaptureId — refund must be issued manually.`);
     revalidatePath("/admin");
@@ -114,19 +143,36 @@ export async function declineOrderAction(orderId: string) {
 
   try {
     await refundPayPalCapture(order.paypalCaptureId);
-    await prisma.$transaction(async (tx) => {
-      for (const item of order.items) {
-        await tx.ticketType.update({
-          where: { id: item.ticketTypeId },
-          data: { quantityRemaining: { increment: item.quantity } },
-        });
-      }
-    });
+    await releaseInventory();
   } catch (err) {
     console.error(`Failed to decline/refund order ${orderId}:`, err);
     await prisma.order.update({ where: { id: orderId }, data: { status: "FAILED" } });
   }
 
+  revalidatePath("/admin");
+}
+
+/** The human-in-the-loop equivalent of a PayPal capture: the owner has
+ * checked their bank statement and confirms this order's transfer
+ * actually arrived. Moves it to PAID (reserving inventory) so it then
+ * flows through the exact same confirm/decline pipeline as a PayPal
+ * order from here. */
+export async function confirmBankTransferAction(orderId: string) {
+  await requireAdmin();
+  const result = await confirmBankTransferPayment(orderId);
+  if (!result.ok) {
+    console.error(`Bank transfer confirmation failed for order ${orderId}: ${result.error}`);
+  }
+  revalidatePath("/admin");
+}
+
+/** Cancels a bank-transfer request that's still just sitting PENDING —
+ * e.g. the buyer said never mind, or enough time passed with no transfer
+ * showing up. Nothing to refund (no payment was ever taken) and no
+ * inventory to release (never reserved until confirmed). */
+export async function cancelBankTransferRequestAction(orderId: string) {
+  await requireAdmin();
+  await claimOrderStatus(orderId, ["PENDING"], "CANCELED");
   revalidatePath("/admin");
 }
 
