@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { title, description, date, location, coverImage, buyLink, isActive } = parsed.data;
+  const { title, description, date, location, coverImage, buyLink, lineup, isActive } = parsed.data;
 
   let parsedDate: Date;
   try {
@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       location,
       coverImage,
       buyLink: buyLink || null,
+      lineup: lineup || null,
     },
   });
 

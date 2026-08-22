@@ -1,5 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { getActiveEvent } from "@/lib/data";
+import { getActiveEvent, getMostRecentPastEventWithGallery } from "@/lib/data";
 import { EventHero } from "@/components/event-hero";
 // Both the instant-PayPal-purchase flow (EventExperience) and the
 // free-request-then-approve flow (GuestRequestExperience) are kept in the
@@ -7,13 +8,38 @@ import { EventHero } from "@/components/event-hero";
 // checkout page (Grow owns pricing/quantity/invoicing from here), set per
 // event in /admin/events. See buy-tickets-section.tsx.
 import { BuyTicketsSection } from "@/components/buy-tickets-section";
-import { siteConfig } from "@/lib/site-config";
+import { LineupSection } from "@/components/lineup-section";
+import { HomepageGalleryTeaser } from "@/components/homepage-gallery-teaser";
+import { AboutSection } from "@/components/about-section";
+import { NotifySignupForm } from "@/components/notify-signup-form";
+import { siteConfig, resolveAbsoluteUrl } from "@/lib/site-config";
 
 // Ticket availability must always be fresh — never statically cached.
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+// Dynamic per the active event, so sharing the homepage link on
+// WhatsApp/Instagram/Twitter shows that event's own photo/title/description
+// as a rich preview instead of a generic blank card.
+export async function generateMetadata(): Promise<Metadata> {
   const event = await getActiveEvent();
+
+  const title = event ? `${event.title} — ${siteConfig.eventSeriesName}` : siteConfig.eventSeriesName;
+  const description = event?.description ?? siteConfig.tagline;
+  const image = resolveAbsoluteUrl(event?.coverImage ?? "/images/event-cover-boiler.svg");
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: [{ url: image }] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
+
+export default async function HomePage() {
+  const [event, pastEventWithGallery] = await Promise.all([
+    getActiveEvent(),
+    getMostRecentPastEventWithGallery(),
+  ]);
 
   if (!event) {
     return (
@@ -33,6 +59,15 @@ export default async function HomePage() {
         >
           See Past Events
         </Link>
+
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+            Want to know the second it&apos;s announced?
+          </p>
+          <NotifySignupForm />
+        </div>
+
+        <AboutSection />
       </div>
     );
   }
@@ -46,7 +81,15 @@ export default async function HomePage() {
         location={event.location}
         coverImage={event.coverImage}
       />
+      <LineupSection lineup={event.lineup} />
       <BuyTicketsSection buyLink={event.buyLink} />
+      {pastEventWithGallery && (
+        <HomepageGalleryTeaser
+          eventTitle={pastEventWithGallery.title}
+          items={pastEventWithGallery.galleryItems}
+        />
+      )}
+      <AboutSection />
     </div>
   );
 }

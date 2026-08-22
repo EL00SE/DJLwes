@@ -14,6 +14,7 @@ export type EventFormInitialValues = {
   location: string;
   coverImage: string;
   buyLink: string;
+  lineup: string;
   isActive: boolean;
 };
 
@@ -28,6 +29,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
   const [location, setLocation] = useState(initial?.location ?? "");
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? "");
   const [buyLink, setBuyLink] = useState(initial?.buyLink ?? "");
+  const [lineup, setLineup] = useState(initial?.lineup ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? false);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -64,7 +66,16 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
     setError(null);
     setIsSubmitting(true);
     try {
-      const body = { title, description, date: dateLocalValue, location, coverImage, buyLink, isActive };
+      const body = {
+        title,
+        description,
+        date: dateLocalValue,
+        location,
+        coverImage,
+        buyLink,
+        lineup,
+        isActive,
+      };
       const res = await fetch(isEdit ? `/api/admin/events/${initial!.id}` : "/api/admin/events", {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -146,6 +157,22 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         <span className="text-xs text-ink-faint">
           Leave blank while pricing/tickets aren&apos;t set up in Grow yet — the homepage shows a
           disabled button until this is filled in.
+        </span>
+      </label>
+
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+          Lineup <span className="normal-case text-ink-faint">(optional, one act per line)</span>
+        </span>
+        <textarea
+          rows={3}
+          value={lineup}
+          onChange={(e) => setLineup(e.target.value)}
+          placeholder={"Nadia K\nJonas R"}
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+        />
+        <span className="text-xs text-ink-faint">
+          Leave blank to hide the lineup section on the homepage entirely.
         </span>
       </label>
 

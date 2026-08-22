@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Bebas_Neue, Inter, Space_Mono } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig, resolveAbsoluteUrl } from "@/lib/site-config";
 import "./globals.css";
 
 const displayFont = Bebas_Neue({
@@ -22,10 +22,24 @@ const monoFont = Space_Mono({
   subsets: ["latin"],
 });
 
+// A site-wide fallback — pages like /past-events inherit this as-is,
+// while the homepage overrides it per-event via its own generateMetadata
+// (see src/app/page.tsx) so a shared link shows that event's own photo.
 export const metadata: Metadata = {
   title: `${siteConfig.eventSeriesName} — ${siteConfig.djName}`,
   description: siteConfig.tagline,
   metadataBase: new URL(siteConfig.siteUrl),
+  openGraph: {
+    title: `${siteConfig.eventSeriesName} — ${siteConfig.djName}`,
+    description: siteConfig.tagline,
+    images: [{ url: resolveAbsoluteUrl("/images/event-cover-boiler.svg") }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteConfig.eventSeriesName} — ${siteConfig.djName}`,
+    description: siteConfig.tagline,
+    images: [resolveAbsoluteUrl("/images/event-cover-boiler.svg")],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

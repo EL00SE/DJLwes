@@ -19,3 +19,12 @@ export const siteConfig = {
   tagline: "Underground deep house, played loud.",
   siteUrl: resolveSiteUrl(),
 };
+
+/** Resolves a possibly-relative image path (e.g. an event's `/images/...`
+ * seed art, or a full Vercel Blob URL) to an absolute URL — required for
+ * Open Graph/Twitter card images, which social platforms fetch directly
+ * rather than through the page that references them. */
+export function resolveAbsoluteUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  return `${siteConfig.siteUrl}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
+}

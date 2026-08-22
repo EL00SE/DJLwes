@@ -8,6 +8,7 @@ export const eventFormSchema = z.object({
   location: z.string().trim().min(1, "Location is required").max(200),
   coverImage: z.string().trim().min(1, "A cover image is required"),
   buyLink: z.string().trim().url("Buy link must be a valid URL").optional().or(z.literal("")),
+  lineup: z.string().trim().max(2000).optional().or(z.literal("")),
   isActive: z.boolean().optional(),
 });
 

@@ -180,6 +180,18 @@ const files = [
     file: "gallery/rooftop-2.svg",
     opts: { seed: 22, width: 900, height: 1200, accentA: PALETTE.magenta, accentB: PALETTE.mint },
   },
+  {
+    file: "about-portrait.svg",
+    opts: {
+      seed: 404,
+      width: 900,
+      height: 1100,
+      accentA: PALETTE.violet,
+      accentB: PALETTE.magenta,
+      ringAccent: PALETTE.mint,
+      label: "DJ LWES",
+    },
+  },
 ];
 
 for (const { file, opts } of files) {

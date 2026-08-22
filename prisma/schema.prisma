@@ -28,6 +28,10 @@ model Event {
   /// sets one; the homepage shows a disabled "coming soon" button until then.
   buyLink String?
 
+  /// Freeform support-act list, one per line (e.g. "Nadia K\nJonas R").
+  /// Null/empty hides the lineup block on the homepage entirely.
+  lineup String?
+
   ticketTypes   TicketType[]
   galleryItems  GalleryItem[]
   orders        Order[]
@@ -214,4 +218,14 @@ model OrderItem {
 
   @@index([orderId])
   @@index([ticketTypeId])
+}
+
+/// An email captured from the homepage's "notify me" form, shown whenever
+/// there's no active event to buy tickets for. No follow-up automation
+/// exists yet — this just gives the business owner a list to email by
+/// hand when the next event is announced.
+model NotifySignup {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
 }

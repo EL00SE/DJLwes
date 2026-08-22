@@ -32,7 +32,7 @@ export default async function AdminPage() {
   twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
 
   // Independent queries — run together rather than one after another.
-  const [pendingGuestRequests, recentGuestRequests, pendingOrders, unpaidOrders, recentOrders] =
+  const [pendingGuestRequests, recentGuestRequests, pendingOrders, unpaidOrders, recentOrders, notifySignups] =
     await Promise.all([
       prisma.guestRequest.findMany({
         where: { status: "PENDING" },
@@ -62,6 +62,7 @@ export default async function AdminPage() {
         take: 20,
         include: orderWithDetailsInclude,
       }),
+      prisma.notifySignup.findMany({ orderBy: { createdAt: "desc" } }),
     ]);
 
   return (
@@ -95,6 +96,32 @@ export default async function AdminPage() {
           Manage Events →
         </Link>
       </div>
+
+      <details className="mb-8">
+        <summary className="cursor-pointer font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
+          Notify-me signups ({notifySignups.length})
+        </summary>
+        <p className="mt-3 mb-4 text-sm text-ink-muted">
+          Emails captured from the homepage&apos;s &quot;notify me&quot; form when there&apos;s no
+          active event. No automated emailing is wired up — this is just a list to copy from
+          whenever the next event goes live.
+        </p>
+        {notifySignups.length === 0 ? (
+          <p className="mb-4 text-ink-muted">Nothing yet.</p>
+        ) : (
+          <ul className="mb-4 flex flex-col gap-1.5">
+            {notifySignups.map((s) => (
+              <li
+                key={s.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line px-4 py-2 text-sm"
+              >
+                <span className="text-ink">{s.email}</span>
+                <span className="font-mono text-xs text-ink-faint">{formatDateTime(s.createdAt)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </details>
 
       <details className="mb-8">
         <summary className="cursor-pointer font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">

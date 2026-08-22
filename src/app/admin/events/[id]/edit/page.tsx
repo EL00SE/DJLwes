@@ -28,6 +28,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           location: event.location,
           coverImage: event.coverImage,
           buyLink: event.buyLink ?? "",
+          lineup: event.lineup ?? "",
           isActive: event.isActive,
         }}
       />
