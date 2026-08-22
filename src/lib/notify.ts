@@ -2,7 +2,8 @@ import { sendEmail } from "@/lib/resend";
 import { sendWhatsAppTicketConfirmation } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/format";
 import { siteConfig } from "@/lib/site-config";
-import type { OrderWithDetails } from "@/lib/orders";
+import { generateOrderQrDataUrl, generateOrderQrPngBuffer } from "@/lib/qr";
+import { orderReference, type OrderWithDetails } from "@/lib/orders";
 
 function escapeHtml(value: string): string {
   return value
@@ -17,7 +18,7 @@ function ticketSummary(order: OrderWithDetails): string {
   return order.items.map((item) => `${item.quantity} × ${item.ticketType.name}`).join(", ");
 }
 
-function confirmationEmailHtml(order: OrderWithDetails): string {
+function confirmationEmailHtml(order: OrderWithDetails, qrDataUrl: string): string {
   const rows = order.items
     .map(
       (item) => `<tr>
@@ -41,7 +42,16 @@ function confirmationEmailHtml(order: OrderWithDetails): string {
           <td style="padding:12px 0;text-align:right;font-weight:bold;">${formatPrice(order.totalCents)}</td>
         </tr>
       </table>
-      <p style="color:#888;font-size:12px;">Order #${order.id.slice(-8).toUpperCase()}</p>
+      <p style="color:#888;font-size:12px;">Order #${orderReference(order.id)}</p>
+      <div style="text-align:center;margin-top:8px;">
+        <p style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 8px;">
+          Show this at the door
+        </p>
+        <img src="${qrDataUrl}" width="200" height="200" alt="Entrance QR code" style="display:inline-block;" />
+        <p style="color:#aaa;font-size:10px;margin-top:6px;">
+          (Also attached as an image, in case it doesn't show above.)
+        </p>
+      </div>
     </div>
   `;
 }
@@ -54,21 +64,31 @@ function confirmationEmailHtml(order: OrderWithDetails): string {
  */
 export async function sendTicketConfirmation(order: OrderWithDetails): Promise<void> {
   if (order.customerEmail) {
+    const [qrDataUrl, qrPng] = await Promise.all([
+      generateOrderQrDataUrl(order.id),
+      generateOrderQrPngBuffer(order.id),
+    ]);
     await sendEmail({
       to: order.customerEmail,
       subject: `Your tickets — ${order.event.title}`,
-      html: confirmationEmailHtml(order),
+      html: confirmationEmailHtml(order, qrDataUrl),
+      attachments: [{ filename: "entrance-qr.png", content: qrPng.toString("base64") }],
     });
     return;
   }
 
   if (order.customerPhone) {
+    // WhatsApp template messages can't carry a generated image inline (the
+    // approved template would need its own image header + a publicly
+    // hosted URL) — buyers get their scannable QR by following this link
+    // back to their own success page instead, which already shows it.
     await sendWhatsAppTicketConfirmation({
       to: order.customerPhone,
       customerName: order.customerName,
       eventTitle: order.event.title,
       ticketSummary: ticketSummary(order),
       total: formatPrice(order.totalCents),
+      ticketUrl: `${siteConfig.siteUrl.replace(/\/$/, "")}/checkout/success?orderId=${order.id}`,
     });
     return;
   }

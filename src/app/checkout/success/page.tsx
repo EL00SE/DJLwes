@@ -5,6 +5,7 @@ import { fulfillOrder } from "@/lib/fulfill-order";
 import { orderReference, orderWithDetailsInclude } from "@/lib/orders";
 import { formatPrice } from "@/lib/format";
 import { bankTransferDetails } from "@/lib/bank-details";
+import { generateOrderQrDataUrl } from "@/lib/qr";
 
 export const dynamic = "force-dynamic";
 
@@ -187,6 +188,8 @@ export default async function CheckoutSuccessPage({
     );
   }
 
+  const qrDataUrl = await generateOrderQrDataUrl(order.id);
+
   return (
     <div className="mx-auto flex max-w-xl flex-col items-center gap-6 px-5 py-24 text-center">
       <div className="glow-field pointer-events-none absolute" />
@@ -226,6 +229,14 @@ export default async function CheckoutSuccessPage({
         <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
           Order #{orderReference(order.id)} &middot; {order.customerName}
         </p>
+      </div>
+
+      <div className="card-edge flex w-full flex-col items-center gap-3 rounded-3xl border border-line p-6 sm:p-8">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
+          Entrance QR — show this at the door
+        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element -- a generated data: URL, not an optimizable remote/static asset */}
+        <img src={qrDataUrl} alt="Entrance QR code" width={220} height={220} className="rounded-2xl" />
       </div>
 
       <Link

@@ -142,6 +142,20 @@ model Order {
   /// been sent (on admin approval), so it's never sent twice.
   confirmationSentAt DateTime?
 
+  /// Set when this order's entrance QR code has been scanned at the door
+  /// (see /admin/scan and /admin/checkin/[orderId]). Null until then.
+  checkedInAt DateTime?
+
+  /// Official receipt, issued via the Green Invoice API once the order is
+  /// CONFIRMED — see src/lib/green-invoice.ts. receiptError is set (and
+  /// the others left null) when issuance was attempted but failed, so
+  /// /admin can show a "Retry" action rather than silently losing it.
+  receiptDocId    String?
+  receiptNumber   String?
+  receiptUrl      String?
+  receiptIssuedAt DateTime?
+  receiptError    String?
+
   paypalOrderId   String? @unique
   paypalCaptureId String? @unique
 

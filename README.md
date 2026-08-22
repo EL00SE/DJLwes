@@ -27,7 +27,9 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 - **Checkout** — PayPal Checkout (sandbox/test mode) or a manual bank transfer, plus a required Instagram handle so the business owner can vet who's buying before approving an order
 - **Bank transfer as a second payment method** — a buyer who picks it sees the account details + a short reference to include, instead of being sent to PayPal; the order sits PENDING (no PayPal capture exists to trigger this automatically) until the business owner checks their real bank statement and clicks **Mark as Received** in [`/admin`](#admin-panel) — that reserves inventory and moves it into the exact same approve/decline pipeline as a PayPal order from there. Declining still releases the ticket back into inventory even though there's no refund API to call — the owner just has to actually wire the money back themselves. See [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts)'s `confirmBankTransferPayment` and [src/lib/bank-details.ts](src/lib/bank-details.ts) (placeholder account details — swap in the real ones before this ever takes a real order)
 - **Manual approval before tickets go out** — payment is captured immediately, but the buyer's ticket confirmation isn't sent until the business owner approves the order in [`/admin`](#admin-panel). Declining automatically refunds the payment and releases the ticket back into inventory — see [src/app/admin/actions.ts](src/app/admin/actions.ts)
-- **Confirmation** — once approved, a real confirmation is sent to the buyer's choice of email (via [Resend](https://resend.com)) or WhatsApp (via [Meta's WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api)) — see [src/lib/notify.ts](src/lib/notify.ts). This is an order confirmation, not yet a scannable admission ticket — see [Planned features](#planned-features)
+- **Confirmation** — once approved, a real confirmation is sent to the buyer's choice of email (via [Resend](https://resend.com), with the QR below both inlined and attached) or WhatsApp (via [Meta's WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api), as a link to their ticket page) — see [src/lib/notify.ts](src/lib/notify.ts)
+- **Entrance QR + door check-in scanner** — every confirmed order gets one QR code (covering the whole order, however many tickets it's for), shown on the checkout success page and emailed with the confirmation. Scanning it — with any phone's camera, or the in-app scanner at [`/admin/scan`](#admin-panel) — opens `/admin/checkin/[orderId]` behind the admin login and checks the order in; a second scan of the same ticket is flagged as a duplicate rather than silently un-admitting them. See [src/lib/qr.ts](src/lib/qr.ts) and [src/app/admin/checkin-actions.ts](src/app/admin/checkin-actions.ts)
+- **Official receipts via Green Invoice** — approving an order also issues a real חשבונית מס/קבלה (tax invoice + receipt, matching a VAT-registered business) through the [Green Invoice](https://www.greeninvoice.co.il/) API, with the document's own number acting as its אסמכתה. Defaults to Green Invoice's sandbox until `GREEN_INVOICE_SANDBOX=false` is set explicitly, since issuing a real numbered document isn't reversible. A failed or not-yet-configured issuance shows a **Retry** button in [`/admin`](#admin-panel) rather than silently losing it — see [src/lib/green-invoice.ts](src/lib/green-invoice.ts)
 - **Inventory safety** — ticket quantities are decremented atomically on payment, so two buyers can never both win the same last ticket. If a buyer loses that race *after* paying, they're automatically refunded in full rather than left charged with nothing — see [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts) and the verification script at [scripts/test-oversell-race.ts](scripts/test-oversell-race.ts), which simulates two concurrent buyers racing for the last ticket against a real database
 - **Signature-verified PayPal webhook** — payment is captured immediately on the success page as a fast path, but the webhook (verified against PayPal's own API — see [PayPal webhook setup](#paypal-webhook-setup)) is the actual source of truth: it fulfills orders even if the buyer's browser never makes it back to the site, and syncs a refund issued directly from the PayPal dashboard (or a dispute/chargeback) back into this app — releasing the ticket and marking the order REFUNDED without anyone touching `/admin`. See [src/app/api/webhooks/paypal/route.ts](src/app/api/webhooks/paypal/route.ts)
 - **Admin approve/decline is race-safe** — a single atomic conditional update ([src/lib/orders.ts](src/lib/orders.ts)'s `claimOrderStatus`) means a double-click, two open admin tabs, or the webhook and an admin action landing at the same moment can never both "win" the same order
@@ -43,6 +45,7 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 - [PayPal Checkout](https://developer.paypal.com/docs/checkout/) (Orders v2 REST API, sandbox/test mode)
 - [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) for admin-uploaded event cover images
 - [Resend](https://resend.com/) for order-confirmation email, [WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api) for WhatsApp delivery
+- [Green Invoice](https://www.greeninvoice.co.il/) for official receipts, [`qrcode`](https://www.npmjs.com/package/qrcode) / [`jsqr`](https://www.npmjs.com/package/jsqr) for generating and scanning entrance QR codes
 - [Zod](https://zod.dev/) for request validation
 - Deployed on [Vercel](https://vercel.com/)
 
@@ -88,6 +91,8 @@ Fill in `.env`:
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` for local dev |
 | `RESEND_API_KEY` | [resend.com/api-keys](https://resend.com/api-keys) |
 | `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` | See [WhatsApp setup](#whatsapp-setup) below — optional, only needed if you want WhatsApp delivery working |
+| `GREEN_INVOICE_API_KEY` / `GREEN_INVOICE_API_SECRET` | From [app.greeninvoice.co.il](https://app.greeninvoice.co.il) → Settings → API Keys — optional, only needed for official receipts (see [Features](#features)) |
+| `GREEN_INVOICE_SANDBOX` | Leave as `true` (the default) for testing; set to `false` only once you're ready to issue real, legally-binding receipts |
 | `ADMIN_PASSWORD` | Pick anything — this is the only thing gating `/admin` |
 
 **Local Postgres via Docker** (optional — skip if using a hosted database):
@@ -141,11 +146,11 @@ Unlike email, WhatsApp won't let a business send free-form text as the *first* m
 
 1. Create a [Meta for Developers](https://developers.facebook.com/apps) app, add the **WhatsApp** product, and note the **Phone Number ID** it gives you a test number for.
 2. Generate a permanent access token (Meta Business Suite → System Users → your app → generate token with `whatsapp_business_messaging` permission) — temporary tokens from the quickstart page expire in 24 hours, so don't use one of those for `WHATSAPP_ACCESS_TOKEN`.
-3. In WhatsApp Manager, create a message template named `ticket_confirmation` (category: **Utility**), language English, with this exact body and 4 variables in this order:
+3. In WhatsApp Manager, create a message template named `ticket_confirmation` (category: **Utility**), language English, with this exact body and 5 variables in this order:
    ```
-   Hi {{1}}, your tickets for {{2}} are confirmed! {{3}}. Total: {{4}}. See you there — DJ Lwes
+   Hi {{1}}, your tickets for {{2}} are confirmed! {{3}}. Total: {{4}}. Your scannable entrance QR is here: {{5}} — see you there, DJ Lwes
    ```
-   Submit it for approval (usually reviewed within a few hours). `src/lib/whatsapp.ts` sends parameters in this order: customer name, event title, ticket summary (e.g. "2 x General Admission"), total price.
+   Submit it for approval (usually reviewed within a few hours). `src/lib/whatsapp.ts` sends parameters in this order: customer name, event title, ticket summary (e.g. "2 x General Admission"), total price, and a link back to the buyer's own `/checkout/success` page (which shows their QR — WhatsApp template messages can't carry a generated image inline without a whole separate image-header template + public hosting, so a link is the pragmatic way to get it to them).
 4. While your app is in development mode, WhatsApp only delivers to numbers you've explicitly added as test recipients in the Meta console (up to 5) — submit the app for Meta's App Review to message arbitrary numbers in production.
 5. Add `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID` to `.env`.
 
@@ -156,8 +161,10 @@ Until this is set up, the site works fine — checkout still offers the WhatsApp
 Visit `/admin` and log in with `ADMIN_PASSWORD` (session lasts 7 days, single shared password — there's no per-person accounts, and it's not meant for a team of staff logging in independently). You'll see:
 
 - **Events** — a card linking to [`/admin/events`](#admin-panel): list every event, create a new one, or edit an existing one's content and ticket tiers. Editing an event also surfaces its **Ticket tiers**: add/edit/delete a tier, with editing preserving already-sold quantities and deletion blocked if any real order references the tier.
-- **Awaiting your approval** — every `PAID` order, oldest first, with the buyer's name, Instagram handle (linked out), contact info, tickets, and total. **Approve** sends the confirmation email/WhatsApp immediately. **Decline & Refund** refunds the PayPal payment in full and puts the ticket(s) back into inventory for someone else to buy.
-- **Recent history** — the last 20 approved/declined orders, for reference. A confirmed order whose notification failed to send (e.g. `RESEND_API_KEY` wasn't set yet) shows a **Resend** button.
+- **Scan Tickets** — a card linking to [`/admin/scan`](#admin-panel): a camera-based QR scanner for checking buyers in at the door, plus a manual order-code fallback for when the camera can't cooperate.
+- **Bank transfers awaiting confirmation** — orders paying by bank transfer sit here until you check your real bank statement and click **Mark as Received** (moves it into the same approval pipeline below) or **Cancel** (nothing was ever charged, so this just closes out the request).
+- **Awaiting your approval** — every `PAID` order, oldest first, with the buyer's name, Instagram handle (linked out), contact info, tickets, and total. **Approve** sends the confirmation email/WhatsApp immediately and issues the Green Invoice receipt. **Decline & Refund** refunds the PayPal payment (or just releases inventory, for a bank transfer) in full.
+- **Recent history** — the last 20 approved/declined orders, for reference. A confirmed order whose notification failed to send (e.g. `RESEND_API_KEY` wasn't set yet) shows a **Resend** button; one whose receipt failed or hasn't been issued yet (e.g. Green Invoice keys weren't set at approval time) shows **Retry receipt**, and a successful one shows a **Receipt ↗** link to the PDF. A **✓ At door** badge appears once the ticket's QR has been scanned in.
 - **Experimental: Grow guest requests** (collapsed) — a separate free-request-then-approve flow built for an earlier Grow-integration attempt, unused on this branch (the live checkout above is PayPal) but kept functional.
 
 There's intentionally no "cancel/undo" on an order approval — the confirmation goes out the moment you click Approve.
@@ -224,7 +231,7 @@ scripts/
 
 ## Planned features
 
-- **Scannable digital tickets** — the buyer now gets an order confirmation by email or WhatsApp (see [src/lib/notify.ts](src/lib/notify.ts)), but not yet an individual scannable admission ticket. Needs a `Ticket` model (one row per admitted person, not per order, each with a unique code + `checkedInAt`), a QR code per ticket, and eventually a door check-in scanner view
+- **Per-ticket (not just per-order) check-in** — the entrance QR covers a whole order at once; a group of 5 all gets in on one scan. Splitting that into one code per individual ticket (its own `Ticket` model, one row per admitted person) would let a group arrive separately, at the cost of generating/delivering N codes per order instead of one
 - **New-order alerts** — the business owner currently has to check `/admin` to see what's awaiting approval; a notification (email/WhatsApp to the business itself) on every new order would close that loop
 - Customer-initiated cancellation (refunds already happen automatically on a lost last-ticket race, and manually via [Decline in /admin](#admin-panel) — but there's no "I want to cancel my own order" path for the buyer)
 - Multiple simultaneous on-sale events (currently one "active" event at a time)

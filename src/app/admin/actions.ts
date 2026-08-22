@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { refundPayPalCapture } from "@/lib/paypal";
 import { sendTicketConfirmation } from "@/lib/notify";
 import { confirmBankTransferPayment } from "@/lib/fulfill-order";
+import { issueReceipt } from "@/lib/green-invoice";
 import { claimOrderStatus, orderWithDetailsInclude } from "@/lib/orders";
 import {
   ADMIN_SESSION_COOKIE,
@@ -50,7 +51,39 @@ export async function logoutAdminAction() {
   redirect("/admin/login");
 }
 
-/** Approves a PAID order: marks it CONFIRMED and sends the ticket confirmation. */
+/** Issues the official Green Invoice receipt for a just-confirmed order
+ * and persists the result either way, so /admin can show a working
+ * "Receipt" link on success or a "Retry" button (with the reason) on
+ * failure — shared between confirmOrderAction and retryReceiptAction. */
+async function issueReceiptAndPersist(order: Awaited<ReturnType<typeof fetchOrderWithDetails>>) {
+  if (!order) return;
+  const result = await issueReceipt(order);
+  if (result.ok) {
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        receiptDocId: result.documentId,
+        receiptNumber: result.documentNumber,
+        receiptUrl: result.pdfUrl,
+        receiptIssuedAt: new Date(),
+        receiptError: null,
+      },
+    });
+  } else {
+    console.error(`Failed to issue Green Invoice receipt for order ${order.id}: ${result.error}`);
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { receiptError: result.error },
+    });
+  }
+}
+
+function fetchOrderWithDetails(orderId: string) {
+  return prisma.order.findUnique({ where: { id: orderId }, include: orderWithDetailsInclude });
+}
+
+/** Approves a PAID order: marks it CONFIRMED, sends the ticket
+ * confirmation, and issues the official Green Invoice receipt. */
 export async function confirmOrderAction(orderId: string) {
   await requireAdmin();
 
@@ -60,10 +93,7 @@ export async function confirmOrderAction(orderId: string) {
     return;
   }
 
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: orderWithDetailsInclude,
-  });
+  const order = await fetchOrderWithDetails(orderId);
   if (!order) {
     revalidatePath("/admin");
     return;
@@ -79,6 +109,26 @@ export async function confirmOrderAction(orderId: string) {
     console.error(`Approved order ${orderId} but failed to send confirmation:`, err);
   }
 
+  // Best-effort, same as the notification above — a Green Invoice hiccup
+  // should never block an approval that's already gone through.
+  await issueReceiptAndPersist(order);
+
+  revalidatePath("/admin");
+}
+
+/** Retries issuing the Green Invoice receipt for an already-CONFIRMED
+ * order — e.g. Green Invoice was down, or its API keys weren't set yet
+ * at approval time. Safe to call repeatedly. */
+export async function retryReceiptAction(orderId: string) {
+  await requireAdmin();
+
+  const order = await fetchOrderWithDetails(orderId);
+  if (!order || order.status !== "CONFIRMED") {
+    revalidatePath("/admin");
+    return;
+  }
+
+  await issueReceiptAndPersist(order);
   revalidatePath("/admin");
 }
 
@@ -180,10 +230,7 @@ export async function cancelBankTransferRequestAction(orderId: string) {
 export async function resendConfirmationAction(orderId: string) {
   await requireAdmin();
 
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: orderWithDetailsInclude,
-  });
+  const order = await fetchOrderWithDetails(orderId);
   if (!order || order.status !== "CONFIRMED") {
     revalidatePath("/admin");
     return;

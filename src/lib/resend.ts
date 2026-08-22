@@ -12,7 +12,15 @@ if (!apiKey) {
   );
 }
 
-export async function sendEmail(params: { to: string; subject: string; html: string }) {
+export async function sendEmail(params: {
+  to: string;
+  subject: string;
+  html: string;
+  /** Base64-encoded file contents — e.g. a ticket's QR code, attached as a
+   * real file since some email clients strip inline data: URIs from the
+   * html body. */
+  attachments?: { filename: string; content: string }[];
+}) {
   if (!apiKey) {
     throw new Error("RESEND_API_KEY is not configured");
   }
@@ -28,6 +36,7 @@ export async function sendEmail(params: { to: string; subject: string; html: str
       to: params.to,
       subject: params.subject,
       html: params.html,
+      attachments: params.attachments,
     }),
   });
 

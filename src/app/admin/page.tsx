@@ -10,6 +10,7 @@ import {
   logoutAdminAction,
   requireAdmin,
   resendConfirmationAction,
+  retryReceiptAction,
 } from "@/app/admin/actions";
 import { approveGuestRequestAction, declineGuestRequestAction } from "@/app/admin/guest-request-actions";
 
@@ -109,12 +110,20 @@ export default async function AdminPage() {
             Edit the current event&apos;s text and photo, mark a different one live, or add the next one.
           </p>
         </div>
-        <Link
-          href="/admin/events"
-          className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
-        >
-          Manage Events →
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/scan"
+            className="rounded-full border border-line-strong px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-ink-muted transition-colors hover:border-accent hover:text-accent-bright"
+          >
+            Scan Tickets →
+          </Link>
+          <Link
+            href="/admin/events"
+            className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
+          >
+            Manage Events →
+          </Link>
+        </div>
       </div>
 
       <details className="mb-8">
@@ -319,6 +328,11 @@ export default async function AdminPage() {
                 >
                   {order.status}
                 </span>
+                {order.checkedInAt && (
+                  <span className="rounded-full bg-accent-dim px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-accent-bright">
+                    ✓ At door
+                  </span>
+                )}
                 {order.status === "CONFIRMED" && !order.confirmationSentAt && (
                   <form action={resendConfirmationAction.bind(null, order.id)}>
                     <button
@@ -329,6 +343,27 @@ export default async function AdminPage() {
                     </button>
                   </form>
                 )}
+                {order.status === "CONFIRMED" &&
+                  (order.receiptUrl ? (
+                    <a
+                      href={order.receiptUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-line-strong px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted hover:text-ink"
+                    >
+                      Receipt ↗
+                    </a>
+                  ) : (
+                    <form action={retryReceiptAction.bind(null, order.id)}>
+                      <button
+                        type="submit"
+                        title={order.receiptError ?? undefined}
+                        className="rounded-full border border-line-strong px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted hover:text-ink"
+                      >
+                        {order.receiptError ? "Retry receipt" : "Issue receipt"}
+                      </button>
+                    </form>
+                  ))}
               </div>
             </div>
           ))}

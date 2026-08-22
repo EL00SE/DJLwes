@@ -27,6 +27,7 @@ export async function sendWhatsAppTicketConfirmation(params: {
   eventTitle: string;
   ticketSummary: string; // e.g. "2 x General Admission"
   total: string; // pre-formatted, e.g. "$70"
+  ticketUrl: string; // buyer's own checkout/success page — shows their scannable entrance QR
 }) {
   if (!accessToken || !phoneNumberId) {
     throw new Error("WhatsApp is not configured (missing WHATSAPP_ACCESS_TOKEN/WHATSAPP_PHONE_NUMBER_ID)");
@@ -53,6 +54,7 @@ export async function sendWhatsAppTicketConfirmation(params: {
               { type: "text", text: params.eventTitle },
               { type: "text", text: params.ticketSummary },
               { type: "text", text: params.total },
+              { type: "text", text: params.ticketUrl },
             ],
           },
         ],
