@@ -72,7 +72,11 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
       if (!res.ok) {
         throw new Error(data.error ?? "Something went wrong. Please try again.");
       }
-      router.push("/admin/events");
+      // On create, land on the edit page instead of the list — ticket
+      // tiers can only be added once the event has an id, and jumping
+      // straight there saves a click for the common "create, then
+      // immediately add tiers" flow.
+      router.push(isEdit ? "/admin/events" : `/admin/events/${data.id}/edit`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
