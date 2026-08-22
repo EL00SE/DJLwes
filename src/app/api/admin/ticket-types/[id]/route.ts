@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isAdminRequest } from "@/lib/admin-auth";
 import { dollarsToCents, ticketTypeFormSchema } from "@/lib/ticket-types";
@@ -12,15 +13,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
   const { id } = await params;
 
-  const existing = await prisma.ticketType.findUnique({ where: { id } });
+  // Independent lookups — run together rather than one after another.
+  const [existing, body] = await Promise.all([
+    prisma.ticketType.findUnique({ where: { id } }),
+    request.json().catch(() => undefined),
+  ]);
   if (!existing) {
     return NextResponse.json({ error: "Ticket tier not found" }, { status: 404 });
   }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  if (body === undefined) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
@@ -73,10 +74,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     );
   }
 
-  await prisma.ticketType.delete({ where: { id } }).catch(() => {
-    // Already gone, or a race with another delete — either way the end
-    // state (no such tier) is what the caller wanted.
-  });
+  try {
+    await prisma.ticketType.delete({ where: { id } });
+  } catch (err) {
+    // P2025 = "record not found" — already gone, or a race with another
+    // delete; either way the end state (no such tier) is what the caller
+    // wanted. Anything else is a real failure and should surface as one.
+    const alreadyGone = err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025";
+    if (!alreadyGone) throw err;
+  }
 
   return NextResponse.json({ ok: true });
 }

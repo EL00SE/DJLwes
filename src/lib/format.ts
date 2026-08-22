@@ -4,6 +4,16 @@
 // which would otherwise silently shift every displayed event time).
 export const EVENT_TIME_ZONE = "Asia/Jerusalem";
 
+/** Splits a freeform newline-separated admin field (e.g. `Event.lineup`,
+ * `Event.entryRequirements`) into a clean list of non-empty lines —
+ * shared so every "one item per line" field parses the same way. */
+export function parseLines(text: string | null | undefined): string[] {
+  return (text ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 export function formatPrice(cents: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

@@ -14,34 +14,29 @@ import { EntryRequirementsSection } from "@/components/entry-requirements-sectio
 import { HomepageGalleryTeaser } from "@/components/homepage-gallery-teaser";
 import { AboutSection } from "@/components/about-section";
 import { NotifySignupForm } from "@/components/notify-signup-form";
-import { siteConfig, resolveAbsoluteUrl } from "@/lib/site-config";
+import { siteConfig } from "@/lib/site-config";
+import { buildSocialMetadata } from "@/lib/metadata";
 
 // Ticket availability must always be fresh — never statically cached.
 export const dynamic = "force-dynamic";
 
 // Dynamic per the active event, so sharing the homepage link on
 // WhatsApp/Instagram/Twitter shows that event's own photo/title/description
-// as a rich preview instead of a generic blank card.
+// as a rich preview instead of a generic blank card. Calls getActiveEvent()
+// independently of the page component below — safe (not a duplicate query)
+// because that function is wrapped in React's cache().
 export async function generateMetadata(): Promise<Metadata> {
   const event = await getActiveEvent();
 
-  const title = event ? `${event.title} — ${siteConfig.eventSeriesName}` : siteConfig.eventSeriesName;
-  const description = event?.description ?? siteConfig.tagline;
-  const image = resolveAbsoluteUrl(event?.coverImage ?? "/images/event-cover-boiler.svg");
-
-  return {
-    title,
-    description,
-    openGraph: { title, description, images: [{ url: image }] },
-    twitter: { card: "summary_large_image", title, description, images: [image] },
-  };
+  return buildSocialMetadata({
+    title: event ? `${event.title} — ${siteConfig.eventSeriesName}` : siteConfig.eventSeriesName,
+    description: event?.description ?? siteConfig.tagline,
+    image: event?.coverImage ?? "/images/event-cover-boiler.svg",
+  });
 }
 
 export default async function HomePage() {
-  const [event, pastEventWithGallery] = await Promise.all([
-    getActiveEvent(),
-    getMostRecentPastEventWithGallery(),
-  ]);
+  const event = await getActiveEvent();
 
   if (!event) {
     return (
@@ -73,6 +68,10 @@ export default async function HomePage() {
       </div>
     );
   }
+
+  // Only fetched once there's actually an active event to render this
+  // alongside — the no-event branch above returns before ever needing it.
+  const pastEventWithGallery = await getMostRecentPastEventWithGallery();
 
   return (
     <div>

@@ -1,13 +1,11 @@
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { parseLines } from "@/lib/format";
 
 /** Renders `lineup` (newline-separated support acts) as a simple list —
  * hidden entirely when there's nothing to show, since not every event
  * has support acts worth calling out. */
 export function LineupSection({ lineup }: { lineup: string | null }) {
-  const acts = (lineup ?? "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const acts = parseLines(lineup);
 
   if (acts.length === 0) return null;
 

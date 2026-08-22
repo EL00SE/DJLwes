@@ -154,8 +154,13 @@ export function TicketTypesManager({
   initial: TicketTypeRow[];
 }) {
   const router = useRouter();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
+  // A single piece of state instead of separate editingId/isAdding flags —
+  // those could otherwise both be "on" at once (editing one tier while
+  // also opening the add-tier form), which never made sense since only
+  // one form is ever meant to be open at a time.
+  const [activeForm, setActiveForm] = useState<{ mode: "add" } | { mode: "edit"; id: string } | null>(
+    null
+  );
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -176,13 +181,18 @@ export function TicketTypesManager({
 
   return (
     <div className="flex flex-col gap-3">
-      {initial.length === 0 && !isAdding && (
+      {initial.length === 0 && activeForm?.mode !== "add" && (
         <p className="text-sm text-ink-muted">No ticket tiers yet — add one below.</p>
       )}
 
       {initial.map((tier) =>
-        editingId === tier.id ? (
-          <TierEditForm key={tier.id} eventId={eventId} tier={tier} onDone={() => setEditingId(null)} />
+        activeForm?.mode === "edit" && activeForm.id === tier.id ? (
+          <TierEditForm
+            key={tier.id}
+            eventId={eventId}
+            tier={tier}
+            onDone={() => setActiveForm(null)}
+          />
         ) : (
           <div
             key={tier.id}
@@ -199,7 +209,7 @@ export function TicketTypesManager({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setEditingId(tier.id)}
+                onClick={() => setActiveForm({ mode: "edit", id: tier.id })}
                 className="rounded-full border border-line-strong px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted hover:text-ink"
               >
                 Edit
@@ -219,12 +229,12 @@ export function TicketTypesManager({
 
       {deleteError && <p className="text-sm text-magenta">{deleteError}</p>}
 
-      {isAdding ? (
-        <TierEditForm eventId={eventId} tier={null} onDone={() => setIsAdding(false)} />
+      {activeForm?.mode === "add" ? (
+        <TierEditForm eventId={eventId} tier={null} onDone={() => setActiveForm(null)} />
       ) : (
         <button
           type="button"
-          onClick={() => setIsAdding(true)}
+          onClick={() => setActiveForm({ mode: "add" })}
           className="self-start rounded-full border border-line-strong px-4 py-1.5 font-mono text-xs uppercase tracking-[0.15em] text-ink-muted hover:text-ink"
         >
           + Add tier

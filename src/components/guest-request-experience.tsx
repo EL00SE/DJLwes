@@ -1,32 +1,14 @@
 "use client";
 
 import { useRef } from "react";
-import { formatPrice } from "@/lib/format";
 import { GuestRequestPanel } from "@/components/guest-request-panel";
+import { TicketTierInfoCard } from "@/components/ticket-tiers-info";
 import type { TicketTypeSummary } from "@/components/ticket-type-card";
 
 // Matches the `lg:` breakpoint the grid below switches on — see
 // event-experience.tsx for the full rationale (also matches the header's
 // own sticky/scrolls-away breakpoint).
 const STACKED_LAYOUT_QUERY = "(max-width: 1023px)";
-
-function TicketTierInfo({ ticketType }: { ticketType: TicketTypeSummary }) {
-  const soldOut = ticketType.quantityRemaining <= 0;
-  return (
-    <div className="card-edge flex items-center justify-between gap-4 rounded-2xl border border-line px-6 py-5">
-      <div>
-        <p className="font-display text-2xl tracking-wide text-ink">{ticketType.name}</p>
-        {ticketType.description && (
-          <p className="mt-1 text-sm text-ink-muted">{ticketType.description}</p>
-        )}
-        <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.15em] text-ink-faint">
-          {soldOut ? "Sold out" : `${ticketType.quantityRemaining} remaining`}
-        </p>
-      </div>
-      <span className="font-display text-3xl text-ink">{formatPrice(ticketType.priceCents)}</span>
-    </div>
-  );
-}
 
 export function GuestRequestExperience({
   eventId,
@@ -68,7 +50,7 @@ export function GuestRequestExperience({
           <p className="text-ink-muted">Ticket details haven&apos;t been posted for this event yet.</p>
         ) : (
           ticketTypes.map((ticketType) => (
-            <TicketTierInfo key={ticketType.id} ticketType={ticketType} />
+            <TicketTierInfoCard key={ticketType.id} ticketType={ticketType} />
           ))
         )}
       </div>

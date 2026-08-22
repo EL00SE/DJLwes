@@ -11,15 +11,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
   const { id: eventId } = await params;
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  // Independent lookups — run together rather than one after another.
+  const [event, body] = await Promise.all([
+    prisma.event.findUnique({ where: { id: eventId }, select: { id: true } }),
+    request.json().catch(() => undefined),
+  ]);
   if (!event) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  if (body === undefined) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
