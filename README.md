@@ -1,42 +1,72 @@
 # Etfe El Boiler — DJ Lwes Ticketing
 
-A customer-facing event ticketing site for **DJ Lwes**' *Etfe El Boiler* parties: a live event page with real-time ticket availability, a past-events gallery, and a PayPal-powered checkout flow.
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-38BDF8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Prisma + PostgreSQL](https://img.shields.io/badge/Prisma-PostgreSQL-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![PayPal Checkout](https://img.shields.io/badge/PayPal-Orders_v2_%2B_JS_SDK-003087?logo=paypal&logoColor=white)](https://developer.paypal.com/docs/checkout/)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed_on-Vercel-000000?logo=vercel&logoColor=white)](https://dj-lwes-paypal-showcase.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+A customer-facing event ticketing site for **DJ Lwes**' *Etfe El Boiler* parties: a live event page with real-time ticket availability, a past-events gallery, and an in-app PayPal checkout — plus the door/back-office side most portfolio projects skip: admin approval, entrance QR check-in, official tax receipts, and a signature-verified webhook keeping it all honest.
 
 Dark, underground deep-house visual identity — neon violet glow, film grain, ticket-stub details — built to feel like a real party's site rather than a template.
 
 **Live demo:** [dj-lwes-paypal-showcase.vercel.app](https://dj-lwes-paypal-showcase.vercel.app)
 
-> **This is a portfolio/CV snapshot branch.** The client's actual live site (`main`) now hands checkout off to an external [Grow](https://grow.business)-hosted payment page instead — a decision made partway through the project. This branch is a frozen copy of the original, fuller in-app implementation (PayPal checkout, signature-verified webhooks, race-safe inventory, admin approval), kept alive with its own isolated database purely to demonstrate that work. See `main`'s README for the current production setup and why the two diverged.
+> **This is a portfolio/CV snapshot branch.** The client's actual live site (`main`) now hands checkout off to an external [Grow](https://grow.business)-hosted payment page instead — a decision made partway through the project. This branch is a frozen copy of the original, fuller in-app implementation (PayPal checkout, signature-verified webhooks, race-safe inventory, admin approval, QR check-in, official receipts), kept alive with its own isolated database purely to demonstrate that work. See `main`'s README for the current production setup and why the two diverged.
+
+## Contents
+
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Tech stack](#tech-stack)
+- [Data model](#data-model)
+- [Setup](#setup)
+- [Admin panel](#admin-panel)
+- [Deployment (Vercel)](#deployment-vercel)
+- [Project structure](#project-structure)
+- [Planned features](#planned-features)
+- [License](#license)
 
 ## Screenshots
 
-_Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `docs/screenshots` folder (real event content is already seeded, so these can be the real thing rather than placeholders):_
+_Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `docs/screenshots` folder (real event content is already seeded, so these can be the real thing rather than placeholders). Suggested shots, in the order they'd tell the story:_
 
-- Current event page (hero, tickets, buy panel)
-- Buy panel open on mobile — centered in the viewport, header scrolled out of the way
-- The hamburger nav open on a small screen
-- Past events gallery
-- Checkout confirmation
-- Admin event editor (photo upload, ticket tiers)
+1. Current event page (hero, tickets, buy panel) — desktop
+2. Buy panel open on mobile — centered in the viewport, header scrolled out of the way
+3. Checkout confirmation — the "Tickets Confirmed" state, entrance QR visible
+4. Admin dashboard — bank transfers / approvals / receipts sections
+5. Admin event editor (photo upload, ticket tiers)
+6. `/admin/scan` — the door check-in scanner
 
 ## Features
+
+### Buyer-facing
 
 - **Current event page** — title, description, date/time, location, cover image, and live ticket types with remaining quantity
 - **Past events gallery** — grid of photos/video per past event
 - **Buy flow** — clicking "Buy" opens a ticket panel: side-by-side on desktop, or on mobile the page smooth-scrolls to center the form in the viewport (the header un-stickies below `lg:` specifically so this centers against the *true* visible viewport, not one a floating header is eating into)
 - **Checkout** — embedded PayPal/Venmo, Apple Pay, and Google Pay buttons (buyer never leaves the page) or a manual bank transfer, plus a required Instagram handle so the business owner can vet who's buying before approving an order
-- **Apple Pay / Google Pay, through PayPal (built, currently dormant)** — [src/components/paypal-checkout-buttons.tsx](src/components/paypal-checkout-buttons.tsx) renders PayPal's own Apple Pay/Google Pay wallet components alongside the standard button, wherever the buyer's device/browser *and* this PayPal account are eligible; both converge on the exact same order-create/capture backend as the standard button, so nothing downstream (inventory, webhook, admin) needs to know which one was used. In practice this stays dormant on an Israel-registered PayPal account today — PayPal doesn't offer this integration tier there at all, not a setting to enable — see [Apple Pay / Google Pay setup](#apple-pay--google-pay-setup) for the actual eligibility constraint
-- **Bank transfer as a second payment method** — a buyer who picks it sees the account details + a short reference to include, instead of being sent to PayPal; the order sits PENDING (no PayPal capture exists to trigger this automatically) until the business owner checks their real bank statement and clicks **Mark as Received** in [`/admin`](#admin-panel) — that reserves inventory and moves it into the exact same approve/decline pipeline as a PayPal order from there. Declining still releases the ticket back into inventory even though there's no refund API to call — the owner just has to actually wire the money back themselves. See [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts)'s `confirmBankTransferPayment` and [src/lib/bank-details.ts](src/lib/bank-details.ts) (placeholder account details — swap in the real ones before this ever takes a real order)
-- **Manual approval before tickets go out** — payment is captured immediately, but the buyer's ticket confirmation isn't sent until the business owner approves the order in [`/admin`](#admin-panel). Declining automatically refunds the payment and releases the ticket back into inventory — see [src/app/admin/actions.ts](src/app/admin/actions.ts)
 - **Confirmation** — once approved, a real confirmation is sent to the buyer's choice of email (via [Resend](https://resend.com), with the QR below both inlined and attached) or WhatsApp (via [Meta's WhatsApp Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api), as a link to their ticket page) — see [src/lib/notify.ts](src/lib/notify.ts)
-- **Entrance QR + door check-in scanner** — every confirmed order gets one QR code (covering the whole order, however many tickets it's for), shown on the checkout success page and emailed with the confirmation. Scanning it — with any phone's camera, or the in-app scanner at [`/admin/scan`](#admin-panel) — opens `/admin/checkin/[orderId]` behind the admin login and checks the order in; a second scan of the same ticket is flagged as a duplicate rather than silently un-admitting them. See [src/lib/qr.ts](src/lib/qr.ts) and [src/app/admin/checkin-actions.ts](src/app/admin/checkin-actions.ts)
-- **Official receipts via Green Invoice** — approving an order also issues a real חשבונית מס/קבלה (tax invoice + receipt, matching a VAT-registered business) through the [Green Invoice](https://www.greeninvoice.co.il/) API, with the document's own number acting as its אסמכתה. Defaults to Green Invoice's sandbox until `GREEN_INVOICE_SANDBOX=false` is set explicitly, since issuing a real numbered document isn't reversible. A failed or not-yet-configured issuance shows a **Retry** button in [`/admin`](#admin-panel) rather than silently losing it — see [src/lib/green-invoice.ts](src/lib/green-invoice.ts)
+- **Entrance QR** — every confirmed order gets one QR code (covering the whole order, however many tickets it's for), shown on the checkout success page and emailed with the confirmation — see [src/lib/qr.ts](src/lib/qr.ts)
+- **Responsive down to 320px** — hamburger nav below `sm:`, 44px touch targets on buy controls, no horizontal overflow anywhere in the range, audited from a 320px phone up through 2560px ultra-wide
+
+### Payments & fulfillment
+
+- **Bank transfer as a second payment method** — a buyer who picks it sees the account details + a short reference to include, instead of being sent to PayPal; the order sits PENDING (no PayPal capture exists to trigger this automatically) until the business owner checks their real bank statement and clicks **Mark as Received** in [`/admin`](#admin-panel) — that reserves inventory and moves it into the exact same approve/decline pipeline as a PayPal order from there. Declining still releases the ticket back into inventory even though there's no refund API to call — the owner just has to actually wire the money back themselves. See [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts)'s `confirmBankTransferPayment` and [src/lib/bank-details.ts](src/lib/bank-details.ts) (placeholder account details — swap in the real ones before this ever takes a real order)
+- **Apple Pay / Google Pay, through PayPal (built, currently dormant)** — [src/components/paypal-checkout-buttons.tsx](src/components/paypal-checkout-buttons.tsx) renders PayPal's own Apple Pay/Google Pay wallet components alongside the standard button, wherever the buyer's device/browser *and* this PayPal account are eligible; both converge on the exact same order-create/capture backend as the standard button, so nothing downstream (inventory, webhook, admin) needs to know which one was used. In practice this stays dormant on an Israel-registered PayPal account today — PayPal doesn't offer this integration tier there at all, not a setting to enable — see [Apple Pay / Google Pay setup](#apple-pay--google-pay-setup) for the actual eligibility constraint
+- **Manual approval before tickets go out** — payment is captured immediately, but the buyer's ticket confirmation isn't sent until the business owner approves the order in [`/admin`](#admin-panel). Declining automatically refunds the payment and releases the ticket back into inventory — see [src/app/admin/actions.ts](src/app/admin/actions.ts)
 - **Inventory safety** — ticket quantities are decremented atomically on payment, so two buyers can never both win the same last ticket. If a buyer loses that race *after* paying, they're automatically refunded in full rather than left charged with nothing — see [src/lib/fulfill-order.ts](src/lib/fulfill-order.ts) and the verification script at [scripts/test-oversell-race.ts](scripts/test-oversell-race.ts), which simulates two concurrent buyers racing for the last ticket against a real database
 - **Signature-verified PayPal webhook** — payment is captured immediately on the success page as a fast path, but the webhook (verified against PayPal's own API — see [PayPal webhook setup](#paypal-webhook-setup)) is the actual source of truth: it fulfills orders even if the buyer's browser never makes it back to the site, and syncs a refund issued directly from the PayPal dashboard (or a dispute/chargeback) back into this app — releasing the ticket and marking the order REFUNDED without anyone touching `/admin`. See [src/app/api/webhooks/paypal/route.ts](src/app/api/webhooks/paypal/route.ts)
 - **Admin approve/decline is race-safe** — a single atomic conditional update ([src/lib/orders.ts](src/lib/orders.ts)'s `claimOrderStatus`) means a double-click, two open admin tabs, or the webhook and an admin action landing at the same moment can never both "win" the same order
+
+### Admin & operations
+
 - **Admin event editor** ([`/admin/events`](#admin-panel)) — list, create, and edit events (title, description, Israel-local date/time, location, cover photo uploaded to [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) straight from the browser, and a "make this the live event" toggle that atomically demotes whichever one was active) — see [src/lib/events.ts](src/lib/events.ts)
 - **Ticket-tier management** — add, edit, or delete a ticket tier (name, description, price, quantity) right from the event editor. Editing preserves however many are already sold (raising a 20/20 tier that's sold 5 to a total of 30 leaves 25 remaining, not 30), and both the total and delete are guarded against breaking real orders — see [src/app/api/admin/ticket-types/[id]/route.ts](<src/app/api/admin/ticket-types/[id]/route.ts>)
-- **Responsive down to 320px** — hamburger nav below `sm:`, 44px touch targets on buy controls, no horizontal overflow anywhere in the range, audited from a 320px phone up through 2560px ultra-wide
+- **Door check-in scanner** — scanning a buyer's entrance QR — with any phone's camera, or the in-app scanner at [`/admin/scan`](#admin-panel) — opens `/admin/checkin/[orderId]` behind the admin login and checks the order in; a second scan of the same ticket is flagged as a duplicate rather than silently un-admitting them. See [src/app/admin/checkin-actions.ts](src/app/admin/checkin-actions.ts)
+- **Official receipts via Green Invoice** — approving an order also issues a real חשבונית מס/קבלה (tax invoice + receipt, matching a VAT-registered business) through the [Green Invoice](https://www.greeninvoice.co.il/) API, with the document's own number acting as its אסמכתה. Defaults to Green Invoice's sandbox until `GREEN_INVOICE_SANDBOX=false` is set explicitly, since issuing a real numbered document isn't reversible. A failed or not-yet-configured issuance shows a **Retry** button in [`/admin`](#admin-panel) rather than silently losing it — see [src/lib/green-invoice.ts](src/lib/green-invoice.ts)
 
 ## Tech stack
 
@@ -203,46 +233,63 @@ src/
   app/
     page.tsx                        Current event page
     past-events/page.tsx            Past events gallery
-    checkout/success/page.tsx       Fallback capture + shows payment-received/confirmed state
+    checkout/success/page.tsx       Fallback capture + payment-received/confirmed state, entrance QR
     api/checkout/route.ts           Creates the DB order + PayPal order
-    api/checkout/[orderId]/capture/route.ts  Captures a PayPal order — called by paypal-checkout-buttons.tsx
+    api/checkout/[orderId]/capture/route.ts      Captures a PayPal order — called by paypal-checkout-buttons.tsx
     api/webhooks/paypal/route.ts    Signature-verified webhook: authoritative fulfillment + refund sync
+    api/guest-requests/route.ts     Submits a guest-list request (legacy pre-PayPal flow, kept functional)
+    api/notify-signup/route.ts      "Notify me" email capture when no event is active
     api/upload/route.ts             Issues Vercel Blob client-upload tokens (admin-gated)
     api/admin/events/route.ts       Create event
     api/admin/events/[id]/route.ts  Update event
     api/admin/events/[id]/ticket-types/route.ts  Add a ticket tier
     api/admin/ticket-types/[id]/route.ts         Edit/delete a ticket tier
-    admin/page.tsx                  Password-gated: approve/decline PAID orders + Manage Events card
+    admin/page.tsx                  Dashboard: bank transfers, approvals, receipts, recent history
+    admin/actions.ts                Server actions: login/logout, confirm/decline/resend/receipt
+    admin/checkin-actions.ts        Server actions: QR / manual door check-in
+    admin/checkin/[orderId]/page.tsx             What an entrance QR opens — order details + Check In
+    admin/scan/page.tsx, scan-client.tsx         Camera-based door scanner + manual order-code fallback
+    admin/guest-request-actions.ts  Approve/decline a guest request (legacy flow)
     admin/events/page.tsx           List every event
     admin/events/new/page.tsx       Create form
     admin/events/[id]/edit/page.tsx Edit form + ticket-tier manager
     admin/login/page.tsx            Admin login form
-    admin/actions.ts                Server actions: login/logout, confirm/decline/resend
     icon.png, apple-icon.png        Favicon / touch icon, generated from the brand logo
   components/
-    site-header.tsx                 Sticky (lg:+) / scrolls-away (below lg:) header with hamburger nav
+    site-header.tsx, site-footer.tsx             Nav (sticky lg:+, scrolls-away below) + footer
     event-hero.tsx                  Title/date/location/cover image
     event-experience.tsx            Ticket list + buy panel; owns selection state and scroll-to-center
-    buy-panel.tsx                   Name/email/quantity form; renders paypal-checkout-buttons.tsx or its own bank-transfer submit
+    buy-panel.tsx                   Name/contact/quantity form; renders paypal-checkout-buttons.tsx or its own bank-transfer submit
     paypal-checkout-buttons.tsx     Embedded PayPal/Apple Pay/Google Pay buttons — see Apple Pay / Google Pay setup
+    guest-request-experience.tsx, guest-request-panel.tsx  Legacy guest-list request form
     ticket-type-card.tsx            One ticket row
     past-event-section.tsx          One past event's block in the gallery
+    about-section.tsx, lineup-section.tsx, entry-requirements-section.tsx    Homepage sections, each hidden when unset
+    countdown-timer.tsx             Time-until-doors-open, client-rendered to avoid a hydration mismatch
+    homepage-gallery-teaser.tsx     "Last time" preview linking to the full past-events gallery
+    notify-signup-form.tsx          "Notify me" form shown when no event is active
+    scroll-reveal.tsx               Fade/slide-in-on-scroll wrapper (plain IntersectionObserver, no library)
     admin/event-form.tsx            Create/edit event form, incl. Blob upload
     admin/ticket-types-manager.tsx  Add/edit/delete ticket tiers
   lib/
     prisma.ts                       Prisma client singleton
     paypal.ts                       PayPal Orders v2 REST client (create/get/capture/refund), plain fetch
-    fulfill-order.ts                Marks an order PAID + decrements inventory, or refunds on a lost race
+    fulfill-order.ts                Marks an order PAID + decrements inventory; captures/refunds on a lost race
+    qr.ts                           Generates an order's entrance QR (data URL for pages, PNG for email)
+    green-invoice.ts                Issues the official Green Invoice receipt via their REST API
     notify.ts                       Sends the order confirmation via whichever contact method was chosen
     resend.ts, whatsapp.ts          Email / WhatsApp send clients, plain fetch
+    bank-details.ts                 Bank transfer account details shown to the buyer (placeholder values)
     admin-auth.ts                   Password check + signed session-cookie helpers for /admin
     orders.ts                       Shared order include/type, terminal-status list, atomic status-claim helper
     events.ts                       Slug generation, atomic "set active event", event zod schema
     ticket-types.ts                 Ticket-tier zod schema, dollars-to-cents helper
+    country-codes.ts                Dial-code list for the WhatsApp phone input
     data.ts                         getActiveEvent / getPastEvents
-    format.ts, site-config.ts       Formatting helpers, brand constants
+    format.ts, site-config.ts, site-content.ts, metadata.ts  Formatting, brand constants, static bio content, shared OG/Twitter metadata
+    defer.ts                        One-tick setState deferral for client-only initial state inside effects
 prisma/
-  schema.prisma                     Event / TicketType / GalleryItem / Order / OrderItem
+  schema.prisma                     Event / TicketType / GalleryItem / Order / OrderItem / GuestRequest / NotifySignup / WebhookLog
   seed.ts                           Initial demo data — everything after that goes through /admin
 scripts/
   generate-placeholder-art.mjs      Regenerates the placeholder cover/gallery art
