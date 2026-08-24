@@ -31,14 +31,31 @@ Dark, underground deep-house visual identity — neon violet glow, film grain, t
 
 ## Screenshots
 
-_Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `docs/screenshots` folder (real event content is already seeded, so these can be the real thing rather than placeholders). Suggested shots, in the order they'd tell the story:_
+**Current event page** — hero, tickets, buy panel
 
-1. Current event page (hero, tickets, buy panel) — desktop
-2. Buy panel open on mobile — centered in the viewport, header scrolled out of the way
-3. Checkout confirmation — the "Tickets Confirmed" state, entrance QR visible
-4. Admin dashboard — bank transfers / approvals / receipts sections
-5. Admin event editor (photo upload, ticket tiers)
-6. `/admin/scan` — the door check-in scanner
+![Current event page: hero, ticket list, and the buy panel with a ticket selected](docs/screenshots/01-homepage-desktop.png)
+
+**Buy panel on mobile** — centered in the viewport, header scrolled out of the way
+
+<img src="docs/screenshots/02-buy-panel-mobile.png" alt="Buy panel open on a mobile viewport" width="360" />
+
+**Checkout confirmation** — the "Tickets Confirmed" state, entrance QR visible
+
+<img src="docs/screenshots/03-checkout-confirmation.png" alt="Checkout confirmation page showing the entrance QR" width="520" />
+
+**Admin dashboard** — bank transfers, approvals, and receipts, all in one place
+
+![Admin dashboard: a bank transfer awaiting confirmation, an order awaiting approval, and recent history with receipt/check-in status](docs/screenshots/04-admin-dashboard.png)
+
+**Admin event editor** — content, cover photo, and ticket tiers
+
+![Admin event editor form with the ticket-tier manager below it](docs/screenshots/05-admin-event-editor.png)
+
+**Door check-in scanner** (`/admin/scan`) — camera scan or manual order-code fallback, shown here checking a buyer in
+
+![The /admin/scan page after a successful manual check-in, showing a green confirmation banner](docs/screenshots/06-admin-scan.png)
+
+<sub>Regenerate these anytime with `node scripts/capture-screenshots.mjs` (needs a running prod server — see the script's header comment) — it seeds a few sample orders for the admin shots and prints their ids to delete afterward.</sub>
 
 ## Features
 
