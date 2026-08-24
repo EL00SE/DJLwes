@@ -27,6 +27,15 @@ html {
   color-scheme: dark;
 }
 
+/* Smooth-scrolls anchor jumps (e.g. the header's About link) — gated on
+ * prefers-reduced-motion the same way ScrollReveal is, so a reduced-motion
+ * visitor gets an instant jump instead of an animated one. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-ink);

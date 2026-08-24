@@ -7,6 +7,7 @@ import { siteConfig } from "@/lib/site-config";
 
 const NAV_LINKS = [
   { href: "/", label: "Next Event" },
+  { href: "/#about", label: "About" },
   { href: "/past-events", label: "Past Events" },
 ];
 

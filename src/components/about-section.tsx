@@ -6,7 +6,10 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 export function AboutSection() {
   return (
     <ScrollReveal>
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-14">
+      <div
+        id="about"
+        className="mx-auto grid max-w-6xl scroll-mt-24 gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-14"
+      >
         <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl border border-line-strong shadow-[0_0_60px_-20px_rgba(177,59,255,0.5)]">
           <Image
             src={aboutContent.photo}
