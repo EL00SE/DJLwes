@@ -42,10 +42,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${displayFont.variable} ${sansFont.variable} ${monoFont.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-bg text-ink antialiased">
+        {/* Visually hidden until focused — lets a keyboard user jump past
+            the header/nav straight to the page content instead of tabbing
+            through every nav link first. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-5 focus:top-5 focus:z-50 focus:rounded-full focus:bg-accent focus:px-5 focus:py-2.5 focus:font-mono focus:text-xs focus:uppercase focus:tracking-[0.2em] focus:text-white"
+        >
+          Skip to content
+        </a>
         <div className="grain-overlay" />
         <div className="relative z-10 flex min-h-full flex-1 flex-col">
           <SiteHeader />
-          <main className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
           <SiteFooter />
         </div>
       </body>

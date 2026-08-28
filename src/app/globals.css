@@ -9,10 +9,15 @@
   --color-bg-raised-2: #1a1226;
   --color-ink: #f5f1fb;
   --color-ink-muted: #ab9fc7;
-  --color-ink-faint: #6d6088;
+  /* Lightened just enough to clear WCAG AA's 4.5:1 for normal text — the
+     original #6d6088 only hit ~3.4:1 against --color-bg, which failed for
+     the dates/captions/disclaimers this token is used on everywhere. */
+  --color-ink-faint: #7f7396;
   --color-line: #2a2038;
   --color-line-strong: #453260;
-  --color-accent: #b13bff;
+  /* Darkened ~4% from the original #b13bff — visually indistinguishable,
+     but white button text on this fill now clears 4.5:1 (was 4.25:1). */
+  --color-accent: #aa39f5;
   --color-accent-bright: #d287ff;
   --color-accent-dim: #5c2688;
   --color-magenta: #ff3fb0;

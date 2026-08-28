@@ -163,6 +163,7 @@ export default async function AdminPage() {
                       className="font-mono text-sm text-accent-bright hover:underline"
                     >
                       @{request.customerInstagram.replace(/^@/, "")}
+                      <span className="sr-only"> (opens in a new tab)</span>
                     </a>
                     <p className="mt-1 text-sm text-ink-muted">
                       {request.customerPhone}
@@ -254,6 +255,7 @@ export default async function AdminPage() {
                       className="font-mono text-sm text-accent-bright hover:underline"
                     >
                       @{order.customerInstagram.replace(/^@/, "")}
+                      <span className="sr-only"> (opens in a new tab)</span>
                     </a>
                     <p className="mt-1 text-sm text-ink-muted">
                       <ContactLine email={order.customerEmail} phone={order.customerPhone} />

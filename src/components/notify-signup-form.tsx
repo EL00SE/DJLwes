@@ -31,7 +31,7 @@ export function NotifySignupForm() {
 
   if (submitted) {
     return (
-      <p className="font-mono text-xs uppercase tracking-[0.25em] text-mint">
+      <p role="status" className="font-mono text-xs uppercase tracking-[0.25em] text-mint">
         You&apos;re on the list — we&apos;ll email you the moment it&apos;s announced.
       </p>
     );
@@ -39,13 +39,17 @@ export function NotifySignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-2 sm:flex-row">
+      <label htmlFor="notify-email" className="sr-only">
+        Email address
+      </label>
       <input
+        id="notify-email"
         required
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@example.com"
-        className="min-w-0 flex-1 rounded-full border border-line bg-bg-raised px-4 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+        className="min-w-0 flex-1 rounded-full border border-line bg-bg-raised px-4 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
       />
       <button
         type="submit"
@@ -54,7 +58,11 @@ export function NotifySignupForm() {
       >
         {isSubmitting ? <Spinner size={13} /> : "Notify me"}
       </button>
-      {error && <p className="text-sm text-magenta sm:basis-full">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-magenta sm:basis-full">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

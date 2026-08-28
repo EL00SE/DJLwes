@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { formatEventDate } from "@/lib/format";
 import { FitText } from "@/components/fit-text";
+import { AutoplayVideo } from "@/components/autoplay-video";
 
 type GalleryItem = {
   id: string;
@@ -55,14 +56,10 @@ export function PastEventSection({
               className="group relative aspect-square overflow-hidden rounded-2xl border border-line"
             >
               {item.type === "VIDEO" ? (
-                <video
+                <AutoplayVideo
                   src={item.url}
                   className="h-full w-full object-cover"
-                  muted
-                  loop
-                  playsInline
-                  autoPlay
-                  aria-label={item.caption ?? title}
+                  ariaLabel={item.caption ?? title}
                 />
               ) : (
                 <Image

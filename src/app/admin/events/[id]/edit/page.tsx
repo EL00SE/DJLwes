@@ -61,7 +61,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
         <p className="mb-4 text-sm text-ink-muted">
           Photos and short clips shown on{" "}
           <a href="/past-events" target="_blank" rel="noreferrer" className="text-accent-bright hover:underline">
-            /past-events
+            /past-events<span className="sr-only"> (opens in a new tab)</span>
           </a>{" "}
           once this event isn&apos;t the active one — plus the homepage&apos;s &quot;last time&quot;
           teaser, if this ends up being the most recent past event with anything in its gallery.

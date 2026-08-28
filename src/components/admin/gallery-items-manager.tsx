@@ -55,7 +55,7 @@ function CaptionEditForm({
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           placeholder="Caption (optional)"
-          className="min-w-0 flex-1 rounded-lg border border-line bg-bg/60 px-3 py-1.5 text-sm text-ink outline-none focus:border-accent"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-bg/60 px-3 py-1.5 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
         <button
           type="submit"
@@ -73,7 +73,11 @@ function CaptionEditForm({
           Cancel
         </button>
       </div>
-      {error && <p className="text-xs text-magenta">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-magenta">
+          {error}
+        </p>
+      )}
     </form>
   );
 }
@@ -221,7 +225,7 @@ export function GalleryItemsManager({ eventId, initial }: { eventId: string; ini
           value={pendingCaption}
           onChange={(e) => setPendingCaption(e.target.value)}
           placeholder="Caption for the next upload (optional)"
-          className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent"
+          className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
         <div className="flex items-center gap-3">
           <input
@@ -241,7 +245,11 @@ export function GalleryItemsManager({ eventId, initial }: { eventId: string; ini
         <span className="text-xs text-ink-faint">Photos or short video clips — up to 50MB each.</span>
       </div>
 
-      {error && <p className="text-sm text-magenta">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-magenta">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

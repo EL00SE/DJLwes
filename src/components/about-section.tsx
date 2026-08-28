@@ -72,6 +72,7 @@ export function AboutSection({ bio, photos }: { bio: string; photos: string[] })
                 className="rounded-full border border-line-strong px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-ink-muted transition-colors hover:border-accent hover:text-accent-bright"
               >
                 {social.label}
+                <span className="sr-only"> (opens in a new tab)</span>
               </a>
             ))}
           </div>

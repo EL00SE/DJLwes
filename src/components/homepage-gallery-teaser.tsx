@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { siteConfig } from "@/lib/site-config";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { AutoplayVideo } from "@/components/autoplay-video";
 
 type TeaserItem = {
   id: string;
@@ -49,14 +50,10 @@ export function HomepageGalleryTeaser({
               className="group relative aspect-square overflow-hidden rounded-2xl border border-line"
             >
               {item.type === "VIDEO" ? (
-                <video
+                <AutoplayVideo
                   src={item.url}
                   className="h-full w-full object-cover"
-                  muted
-                  loop
-                  playsInline
-                  autoPlay
-                  aria-label={item.caption ?? eventTitle}
+                  ariaLabel={item.caption ?? eventTitle}
                 />
               ) : (
                 <Image

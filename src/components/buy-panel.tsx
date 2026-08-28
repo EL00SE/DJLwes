@@ -170,7 +170,7 @@ export function BuyPanel({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
-                className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
               />
             </label>
 
@@ -184,7 +184,7 @@ export function BuyPanel({
                 value={instagram}
                 onChange={(e) => setInstagram(e.target.value)}
                 placeholder="@yourhandle"
-                className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
               />
               {INSTAGRAM_HANDLE_PATTERN.test(instagram.trim()) && (
                 <a
@@ -194,6 +194,7 @@ export function BuyPanel({
                   className="self-start font-mono text-[11px] text-accent-bright hover:underline"
                 >
                   → View @{instagram.trim().replace(/^@/, "")} on Instagram, to double-check
+                  <span className="sr-only"> (opens in a new tab)</span>
                 </a>
               )}
             </label>
@@ -237,7 +238,7 @@ export function BuyPanel({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                  className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
                 />
               </label>
             ) : (
@@ -250,7 +251,7 @@ export function BuyPanel({
                     value={countryDialCode}
                     onChange={(e) => setCountryDialCode(e.target.value)}
                     aria-label="Country code"
-                    className="w-[6.5rem] shrink-0 rounded-xl border border-line bg-bg/60 px-2 py-2.5 text-ink outline-none transition-colors focus:border-accent"
+                    className="w-[6.5rem] shrink-0 rounded-xl border border-line bg-bg/60 px-2 py-2.5 text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/40"
                   >
                     {COUNTRY_CODES.map((country) => (
                       <option key={`${country.iso}-${country.dialCode}`} value={country.dialCode}>
@@ -264,7 +265,7 @@ export function BuyPanel({
                     value={phoneLocal}
                     onChange={(e) => setPhoneLocal(e.target.value)}
                     placeholder="50 123 4567"
-                    className="min-w-0 flex-1 rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                    className="min-w-0 flex-1 rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
                   />
                 </div>
               </div>
@@ -278,7 +279,11 @@ export function BuyPanel({
             <span className="font-display text-3xl text-ink">{formatPrice(total)}</span>
           </div>
 
-          {error && <p className="text-sm text-magenta">{error}</p>}
+          {error && (
+            <p role="alert" className="text-sm text-magenta">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"

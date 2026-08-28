@@ -18,6 +18,7 @@ export function BuyTicketsSection({
           className="rounded-full bg-accent px-10 py-4 font-mono text-sm uppercase tracking-[0.25em] text-white shadow-[0_0_40px_-8px_var(--color-accent)] transition-opacity hover:opacity-90"
         >
           Buy Tickets
+          <span className="sr-only"> (opens in a new tab)</span>
         </a>
       ) : (
         <button

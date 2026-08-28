@@ -109,7 +109,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors focus:border-accent"
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
       </label>
 
@@ -120,7 +120,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
           rows={4}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors focus:border-accent"
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
       </label>
 
@@ -134,7 +134,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
             type="datetime-local"
             value={dateLocalValue}
             onChange={(e) => setDateLocalValue(e.target.value)}
-            className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors focus:border-accent"
+            className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/40"
           />
         </label>
 
@@ -145,7 +145,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors focus:border-accent"
+            className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/40"
           />
         </label>
       </div>
@@ -159,7 +159,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
           value={buyLink}
           onChange={(e) => setBuyLink(e.target.value)}
           placeholder="https://pay.grow.link/..."
-          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
         <span className="text-xs text-ink-faint">
           Leave blank while pricing/tickets aren&apos;t set up in Grow yet — the homepage shows a
@@ -176,7 +176,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
           value={lineup}
           onChange={(e) => setLineup(e.target.value)}
           placeholder={"Nadia K\nJonas R"}
-          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
         <span className="text-xs text-ink-faint">
           Leave blank to hide the lineup section on the homepage entirely.
@@ -193,7 +193,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
           value={entryRequirements}
           onChange={(e) => setEntryRequirements(e.target.value)}
           placeholder={"Mixed groups only after 1am\nValid ID required\n21+"}
-          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
         <span className="text-xs text-ink-faint">
           Shown to buyers before they click through to Grow — door policies, ID rules, age limits,
@@ -210,7 +210,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
           value={buyDisclaimer}
           onChange={(e) => setBuyDisclaimer(e.target.value)}
           placeholder="All sales are final — tickets are non-refundable and non-transferable."
-          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
         <span className="text-xs text-ink-faint">
           A short note shown right under the Buy Tickets button. Leave blank to hide it entirely.
@@ -260,7 +260,11 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         </span>
       </label>
 
-      {error && <p className="text-sm text-magenta">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-magenta">
+          {error}
+        </p>
+      )}
 
       <div className="flex gap-3">
         <button

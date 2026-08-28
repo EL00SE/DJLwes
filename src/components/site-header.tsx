@@ -24,8 +24,12 @@ export function SiteHeader() {
         <Link href="/" className="group flex items-center gap-3">
           <span className="relative block h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-line-strong transition-shadow group-hover:shadow-[0_0_18px_-2px_var(--color-accent)]">
             <Image
+              // Decorative — the wordmark right next to it already names
+              // the link's destination, so a real alt would just repeat
+              // (and mismatch: this logo represents the DJ, not the event
+              // series name) what a screen reader already announces.
               src="/images/logo.png"
-              alt={siteConfig.eventSeriesName}
+              alt=""
               width={72}
               height={72}
               priority

@@ -74,7 +74,7 @@ function TierEditForm({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-ink outline-none focus:border-accent"
+            className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/40"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -85,7 +85,7 @@ function TierEditForm({
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-ink outline-none focus:border-accent"
+            className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/40"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -99,7 +99,7 @@ function TierEditForm({
             step="0.01"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-ink outline-none focus:border-accent"
+            className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/40"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -113,7 +113,7 @@ function TierEditForm({
             step="1"
             value={quantityTotal}
             onChange={(e) => setQuantityTotal(e.target.value)}
-            className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-ink outline-none focus:border-accent"
+            className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/40"
           />
         </label>
       </div>
@@ -125,7 +125,11 @@ function TierEditForm({
         </p>
       )}
 
-      {error && <p className="text-sm text-magenta">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-magenta">
+          {error}
+        </p>
+      )}
 
       <div className="flex gap-2">
         <button
@@ -230,7 +234,11 @@ export function TicketTypesManager({
         )
       )}
 
-      {deleteError && <p className="text-sm text-magenta">{deleteError}</p>}
+      {deleteError && (
+        <p role="alert" className="text-sm text-magenta">
+          {deleteError}
+        </p>
+      )}
 
       {activeForm?.mode === "add" ? (
         <TierEditForm eventId={eventId} tier={null} onDone={() => setActiveForm(null)} />

@@ -25,6 +25,10 @@ function Unit({ value, label }: { value: number; label: string }) {
   );
 }
 
+function pluralize(value: number, unit: string) {
+  return `${value} ${unit}${value === 1 ? "" : "s"}`;
+}
+
 /** Live countdown to an event's start. Computed client-side from the
  * buyer's own clock — the target instant (`date`) is already correct UTC
  * regardless of server timezone, so no timezone handling is needed here,
@@ -74,12 +78,24 @@ export function CountdownTimer({ date }: { date: Date }) {
     );
   }
 
+  // The four-unit breakdown below is marked aria-hidden and replaced with
+  // one coherent sentence for screen readers — without this, a screen
+  // reader would read eight separate fragments ("05, Days, 14, Hrs, ...")
+  // instead of one sensible phrase, and would re-announce the whole thing
+  // every second if it ever revisited focus here.
   return (
-    <div className="flex items-start gap-4 sm:gap-6">
-      <Unit value={remaining.days} label="Days" />
-      <Unit value={remaining.hours} label="Hrs" />
-      <Unit value={remaining.minutes} label="Min" />
-      <Unit value={remaining.seconds} label="Sec" />
+    <div>
+      <p className="sr-only">
+        {pluralize(remaining.days, "day")}, {pluralize(remaining.hours, "hour")},{" "}
+        {pluralize(remaining.minutes, "minute")}, and {pluralize(remaining.seconds, "second")} until
+        doors open
+      </p>
+      <div aria-hidden className="flex items-start gap-4 sm:gap-6">
+        <Unit value={remaining.days} label="Days" />
+        <Unit value={remaining.hours} label="Hrs" />
+        <Unit value={remaining.minutes} label="Min" />
+        <Unit value={remaining.seconds} label="Sec" />
+      </div>
     </div>
   );
 }

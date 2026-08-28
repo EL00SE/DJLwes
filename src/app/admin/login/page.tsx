@@ -21,9 +21,13 @@ export default async function AdminLoginPage({
           type="password"
           name="password"
           placeholder="Password"
-          className="rounded-xl border border-line bg-bg-raised px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+          className="rounded-xl border border-line bg-bg-raised px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
-        {error && <p className="text-sm text-magenta">Incorrect password.</p>}
+        {error && (
+          <p role="alert" className="text-sm text-magenta">
+            Incorrect password.
+          </p>
+        )}
         <button
           type="submit"
           className="rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90"
