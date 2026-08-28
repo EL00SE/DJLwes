@@ -78,29 +78,42 @@ export function SiteHeader() {
         </button>
       </div>
 
-      {/* Mobile dropdown menu below `sm:` */}
-      {isMenuOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setIsMenuOpen(false)}
-            className="fixed inset-0 z-30 bg-bg/60 backdrop-blur-sm sm:hidden"
-          />
-          <nav className="card-edge relative z-40 flex flex-col gap-1 border-t border-line px-5 py-3 font-mono text-sm uppercase tracking-[0.15em] sm:hidden">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-                className="rounded-xl px-4 py-3 text-ink-muted transition-colors hover:bg-bg-raised-2 hover:text-ink"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </>
-      )}
+      {/* Mobile dropdown menu below `sm:` — always in the DOM (rather than
+          conditionally mounted) so both opening and closing can animate;
+          a plain `{isMenuOpen && ...}` would make it vanish instantly on
+          close instead of transitioning out. The backdrop fades over the
+          whole page while the panel below grows open in sync, using the
+          CSS grid-template-rows trick to animate to/from an unknown
+          content height (`0fr` -> `1fr`) without any JS measuring. */}
+      <button
+        type="button"
+        aria-label="Close menu"
+        tabIndex={isMenuOpen ? 0 : -1}
+        onClick={() => setIsMenuOpen(false)}
+        className={`fixed inset-0 z-30 bg-bg/60 backdrop-blur-sm transition-opacity duration-300 sm:hidden ${
+          isMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
+      <div
+        aria-hidden={!isMenuOpen}
+        className={`grid overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out sm:hidden ${
+          isMenuOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <nav className="card-edge relative z-40 flex flex-col gap-1 overflow-hidden border-t border-line px-5 py-3 font-mono text-sm uppercase tracking-[0.15em]">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              tabIndex={isMenuOpen ? 0 : -1}
+              onClick={() => setIsMenuOpen(false)}
+              className="rounded-xl px-4 py-3 text-ink-muted transition-colors hover:bg-bg-raised-2 hover:text-ink"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
     </header>
   );
 }

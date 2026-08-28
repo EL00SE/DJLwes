@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { formatEventDate } from "@/lib/format";
+import { FitText } from "@/components/fit-text";
 
 type GalleryItem = {
   id: string;
@@ -25,8 +26,12 @@ export function PastEventSection({
     <section className="border-b border-line py-14">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="font-display text-4xl tracking-wide text-ink sm:text-5xl">{title}</h2>
+          <div className="min-w-0">
+            <h2>
+              <FitText className="font-display text-4xl tracking-wide text-ink sm:text-5xl">
+                {title}
+              </FitText>
+            </h2>
             <p className="mt-1 font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
               {formatEventDate(date)} &middot; {location}
             </p>

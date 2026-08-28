@@ -4,6 +4,7 @@ import { requireAdmin } from "@/app/admin/actions";
 import { toEventLocalDateTimeInputValue } from "@/lib/format";
 import { EventForm } from "@/components/admin/event-form";
 import { TicketTypesManager } from "@/components/admin/ticket-types-manager";
+import { GalleryItemsManager } from "@/components/admin/gallery-items-manager";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,10 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
 
   const event = await prisma.event.findUnique({
     where: { id },
-    include: { ticketTypes: { orderBy: { priceCents: "asc" } } },
+    include: {
+      ticketTypes: { orderBy: { priceCents: "asc" } },
+      galleryItems: { orderBy: { sortOrder: "asc" } },
+    },
   });
   if (!event) {
     notFound();
@@ -50,6 +54,19 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           bother with it.
         </p>
         <TicketTypesManager eventId={event.id} initial={event.ticketTypes} />
+      </div>
+
+      <div className="mt-12 border-t border-line pt-8">
+        <h2 className="mb-2 font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">Gallery</h2>
+        <p className="mb-4 text-sm text-ink-muted">
+          Photos and short clips shown on{" "}
+          <a href="/past-events" target="_blank" rel="noreferrer" className="text-accent-bright hover:underline">
+            /past-events
+          </a>{" "}
+          once this event isn&apos;t the active one — plus the homepage&apos;s &quot;last time&quot;
+          teaser, if this ends up being the most recent past event with anything in its gallery.
+        </p>
+        <GalleryItemsManager eventId={event.id} initial={event.galleryItems} />
       </div>
     </div>
   );
