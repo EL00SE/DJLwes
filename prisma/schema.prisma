@@ -252,5 +252,12 @@ model AboutContent {
 model NotifySignup {
   id        String   @id @default(cuid())
   email     String   @unique
+  /// Submitter's IP, used only to throttle a single source spamming this
+  /// public, unauthenticated form — never displayed or exported. Nullable
+  /// since it can't always be determined (and older rows predate this
+  /// column).
+  ipAddress String?
   createdAt DateTime @default(now())
+
+  @@index([ipAddress, createdAt])
 }

@@ -5,6 +5,11 @@ import { Spinner } from "@/components/spinner";
 
 export function NotifySignupForm() {
   const [email, setEmail] = useState("");
+  // Honeypot — a real visitor never sees or fills this in (see the field
+  // below), so anything that arrives here non-empty is a bot blindly
+  // filling out every input it found. The server checks this, not this
+  // component; see src/app/api/notify-signup/route.ts.
+  const [company, setCompany] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -17,7 +22,7 @@ export function NotifySignupForm() {
       const res = await fetch("/api/notify-signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, company }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
@@ -39,6 +44,24 @@ export function NotifySignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-2 sm:flex-row">
+      {/* Honeypot field: positioned off-screen (not display:none, which
+          some bots specifically know to skip) and hidden from assistive
+          tech and tab order, so it's invisible to every real visitor —
+          sighted, screen-reader, or keyboard — but still present for a
+          bot that fills in every field it finds. */}
+      <div className="absolute left-[-9999px]" aria-hidden="true">
+        <label htmlFor="notify-company">Company</label>
+        <input
+          id="notify-company"
+          type="text"
+          name="company"
+          tabIndex={-1}
+          autoComplete="off"
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+        />
+      </div>
+
       <label htmlFor="notify-email" className="sr-only">
         Email address
       </label>
