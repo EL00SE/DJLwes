@@ -37,8 +37,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const event = await getActiveEvent();
-  const aboutContent = await getAboutContent();
+  // Independent queries — both always needed regardless of which branch
+  // below ends up rendering, so there's no reason to wait on one before
+  // starting the other.
+  const [event, aboutContent] = await Promise.all([getActiveEvent(), getAboutContent()]);
 
   if (!event) {
     return (
