@@ -31,8 +31,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       { status: 400 }
     );
   }
-  const { title, description, date, location, coverImage, buyLink, lineup, entryRequirements, isActive } =
-    parsed.data;
+  const {
+    title,
+    description,
+    date,
+    location,
+    coverImage,
+    buyLink,
+    lineup,
+    entryRequirements,
+    buyDisclaimer,
+    isActive,
+  } = parsed.data;
 
   let parsedDate: Date;
   try {
@@ -58,6 +68,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       buyLink: buyLink || null,
       lineup: lineup || null,
       entryRequirements: entryRequirements || null,
+      buyDisclaimer: buyDisclaimer || null,
       ...(isActive ? {} : { isActive: false }),
     },
   });

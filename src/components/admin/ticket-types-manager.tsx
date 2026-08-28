@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/format";
+import { Spinner } from "@/components/spinner";
 
 export type TicketTypeRow = {
   id: string;
@@ -130,8 +131,9 @@ function TierEditForm({
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-full bg-accent px-4 py-1.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
+          {isSaving && <Spinner size={12} />}
           {isSaving ? "Saving…" : tier ? "Save" : "Add tier"}
         </button>
         <button
@@ -218,9 +220,10 @@ export function TicketTypesManager({
                 type="button"
                 onClick={() => handleDelete(tier.id)}
                 disabled={deletingId === tier.id}
-                className="rounded-full border border-line-strong px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted transition-colors hover:border-magenta hover:text-magenta disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted transition-colors hover:border-magenta hover:text-magenta disabled:opacity-50"
               >
-                {deletingId === tier.id ? "…" : "Delete"}
+                {deletingId === tier.id && <Spinner size={10} />}
+                Delete
               </button>
             </div>
           </div>

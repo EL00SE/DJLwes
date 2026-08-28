@@ -38,6 +38,11 @@ model Event {
   /// carry this context. Null/empty hides the section entirely.
   entryRequirements String?
 
+  /// A short disclaimer shown just under the Buy Tickets button (e.g. "All
+  /// sales are final — no refunds or transfers"). One free-text paragraph,
+  /// not a list like entryRequirements. Null/empty hides it entirely.
+  buyDisclaimer String?
+
   ticketTypes   TicketType[]
   galleryItems  GalleryItem[]
   orders        Order[]
@@ -224,6 +229,20 @@ model OrderItem {
 
   @@index([orderId])
   @@index([ticketTypeId])
+}
+
+/// Singleton row holding the homepage's "About" section content — the one
+/// piece of site-wide (not per-event) content the admin edits. Always
+/// exactly one row, at the fixed id below; see src/lib/about-content.ts.
+/// Socials and the SoundCloud embed stay in src/lib/site-content.ts for
+/// now (they change far less often than the bio/photos do).
+model AboutContent {
+  id        String   @id @default("about")
+  bio       String
+  /// Blob URLs, admin-uploaded — shown as a small photo grid next to the
+  /// bio. Empty hides the photo grid entirely (bio still shows).
+  photos    String[] @default([])
+  updatedAt DateTime @updatedAt
 }
 
 /// An email captured from the homepage's "notify me" form, shown whenever

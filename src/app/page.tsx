@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getActiveEvent, getMostRecentPastEventWithGallery } from "@/lib/data";
+import { getAboutContent } from "@/lib/about-content";
 import { EventHero } from "@/components/event-hero";
 // Both the instant-PayPal-purchase flow (EventExperience) and the
 // free-request-then-approve flow (GuestRequestExperience) are kept in the
@@ -37,6 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const event = await getActiveEvent();
+  const aboutContent = await getAboutContent();
 
   if (!event) {
     return (
@@ -64,7 +66,7 @@ export default async function HomePage() {
           <NotifySignupForm />
         </div>
 
-        <AboutSection />
+        <AboutSection bio={aboutContent.bio} photos={aboutContent.photos} />
       </div>
     );
   }
@@ -85,14 +87,14 @@ export default async function HomePage() {
       <LineupSection lineup={event.lineup} />
       <TicketTiersInfo ticketTypes={event.ticketTypes} />
       <EntryRequirementsSection entryRequirements={event.entryRequirements} />
-      <BuyTicketsSection buyLink={event.buyLink} />
+      <BuyTicketsSection buyLink={event.buyLink} disclaimer={event.buyDisclaimer} />
       {pastEventWithGallery && (
         <HomepageGalleryTeaser
           eventTitle={pastEventWithGallery.title}
           items={pastEventWithGallery.galleryItems}
         />
       )}
-      <AboutSection />
+      <AboutSection bio={aboutContent.bio} photos={aboutContent.photos} />
     </div>
   );
 }

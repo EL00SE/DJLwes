@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
+import { Spinner } from "@/components/spinner";
 
 export type EventFormInitialValues = {
   id: string;
@@ -16,6 +17,7 @@ export type EventFormInitialValues = {
   buyLink: string;
   lineup: string;
   entryRequirements: string;
+  buyDisclaimer: string;
   isActive: boolean;
 };
 
@@ -32,6 +34,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
   const [buyLink, setBuyLink] = useState(initial?.buyLink ?? "");
   const [lineup, setLineup] = useState(initial?.lineup ?? "");
   const [entryRequirements, setEntryRequirements] = useState(initial?.entryRequirements ?? "");
+  const [buyDisclaimer, setBuyDisclaimer] = useState(initial?.buyDisclaimer ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? false);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -77,6 +80,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         buyLink,
         lineup,
         entryRequirements,
+        buyDisclaimer,
         isActive,
       };
       const res = await fetch(isEdit ? `/api/admin/events/${initial!.id}` : "/api/admin/events", {
@@ -197,6 +201,22 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         </span>
       </label>
 
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+          Buy button disclaimer <span className="normal-case text-ink-faint">(optional)</span>
+        </span>
+        <textarea
+          rows={2}
+          value={buyDisclaimer}
+          onChange={(e) => setBuyDisclaimer(e.target.value)}
+          placeholder="All sales are final — tickets are non-refundable and non-transferable."
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+        />
+        <span className="text-xs text-ink-faint">
+          A short note shown right under the Buy Tickets button. Leave blank to hide it entirely.
+        </span>
+      </label>
+
       <div className="flex flex-col gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">Cover image</span>
         <div className="flex items-center gap-4">
@@ -218,7 +238,11 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
               disabled={isUploading}
               className="text-sm text-ink-muted file:mr-3 file:rounded-full file:border file:border-line-strong file:bg-transparent file:px-4 file:py-1.5 file:font-mono file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink-muted"
             />
-            {isUploading && <span className="font-mono text-xs text-accent-bright">Uploading…</span>}
+            {isUploading && (
+              <span className="flex items-center gap-1.5 font-mono text-xs text-accent-bright">
+                <Spinner size={13} /> Uploading…
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -242,8 +266,9 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         <button
           type="submit"
           disabled={isSubmitting || isUploading}
-          className="rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
         >
+          {isSubmitting && <Spinner size={14} />}
           {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Create event"}
         </button>
         <button

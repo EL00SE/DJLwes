@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Spinner } from "@/components/spinner";
 
 export function NotifySignupForm() {
   const [email, setEmail] = useState("");
@@ -49,9 +50,9 @@ export function NotifySignupForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="shrink-0 rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {isSubmitting ? "…" : "Notify me"}
+        {isSubmitting ? <Spinner size={13} /> : "Notify me"}
       </button>
       {error && <p className="text-sm text-magenta sm:basis-full">{error}</p>}
     </form>

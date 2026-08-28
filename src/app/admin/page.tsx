@@ -89,12 +89,20 @@ export default async function AdminPage() {
             Edit the current event&apos;s text and photo, set its Grow buy link, or add the next one.
           </p>
         </div>
-        <Link
-          href="/admin/events"
-          className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
-        >
-          Manage Events →
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/about"
+            className="rounded-full border border-line-strong px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-ink-muted transition-colors hover:border-accent hover:text-accent-bright"
+          >
+            About Us →
+          </Link>
+          <Link
+            href="/admin/events"
+            className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
+          >
+            Manage Events →
+          </Link>
+        </div>
       </div>
 
       <details className="mb-8">

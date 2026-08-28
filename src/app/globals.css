@@ -36,6 +36,27 @@ html {
   }
 }
 
+/* Fades + slides each page in on navigation — src/app/template.tsx wraps
+ * every route in this class, and template.tsx remounts on every
+ * navigation (unlike layout.tsx, which persists), so this animation just
+ * replays on its own with no JS needed. */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-transition {
+    animation: page-enter 0.4s ease-out both;
+  }
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-ink);

@@ -1,7 +1,13 @@
 // Ticket pricing, quantity, payment, and invoicing all live on Grow's
 // side now — this is deliberately just a link out to the checkout page
 // the admin sets per-event (see admin/events), not a form of our own.
-export function BuyTicketsSection({ buyLink }: { buyLink: string | null }) {
+export function BuyTicketsSection({
+  buyLink,
+  disclaimer,
+}: {
+  buyLink: string | null;
+  disclaimer?: string | null;
+}) {
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-5 py-16 text-center sm:px-8">
       {buyLink ? (
@@ -25,6 +31,7 @@ export function BuyTicketsSection({ buyLink }: { buyLink: string | null }) {
       <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
         Secure checkout via Grow — opens in a new tab
       </p>
+      {disclaimer && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}
     </div>
   );
 }

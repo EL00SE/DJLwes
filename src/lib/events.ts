@@ -10,6 +10,7 @@ export const eventFormSchema = z.object({
   buyLink: z.string().trim().url("Buy link must be a valid URL").optional().or(z.literal("")),
   lineup: z.string().trim().max(2000).optional().or(z.literal("")),
   entryRequirements: z.string().trim().max(2000).optional().or(z.literal("")),
+  buyDisclaimer: z.string().trim().max(500).optional().or(z.literal("")),
   isActive: z.boolean().optional(),
 });
 

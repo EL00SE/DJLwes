@@ -97,6 +97,19 @@ async function main() {
     },
   });
 
+  // Upsert, not delete-then-create — this is a singleton the admin edits
+  // directly (see /admin/about), so a reseed shouldn't wipe out real
+  // content. Only creates the row (with these starter defaults) if it
+  // doesn't already exist.
+  await prisma.aboutContent.upsert({
+    where: { id: "about" },
+    update: {},
+    create: {
+      bio: "DJ Lwes has spent the last few years building Etfe El Boiler from a one-room warehouse night into Haifa's home for deep, hypnotic house — low lights, loud subs, no phones on the floor. Every set is a slow build: no big drops, no filler, just a room that locks in together for six hours straight.",
+      photos: ["/images/about-portrait.svg"],
+    },
+  });
+
   console.log("Seed complete.");
 }
 
