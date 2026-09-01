@@ -37,7 +37,10 @@ export function HomepageGalleryTeaser({
           </div>
           <Link
             href="/past-events"
-            className="font-mono text-xs uppercase tracking-[0.15em] text-ink-faint transition-colors hover:text-accent-bright active:text-accent-bright"
+            // -my-3 offsets the added py-3 so it doesn't push surrounding
+            // layout — the text was previously only ~16px tall, well
+            // under a comfortable tap target.
+            className="-my-3 py-3 font-mono text-xs uppercase tracking-[0.15em] text-ink-faint transition-colors hover:text-accent-bright active:text-accent-bright"
           >
             See all past events →
           </Link>

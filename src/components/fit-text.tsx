@@ -24,10 +24,18 @@ export function FitText({ children, className = "" }: { children: React.ReactNod
     if (!container || !text) return;
 
     function fit() {
-      // Reset to natural size before measuring — otherwise a previous
-      // scale would throw off scrollWidth, shrinking a little more every
-      // time this re-runs instead of settling on the right value.
-      text!.style.transform = "scale(1)";
+      // No need to reset any previously-applied scale before measuring —
+      // `transform` is a paint-time effect and never changes what
+      // `scrollWidth` reports (confirmed: a scaled element reports the
+      // same scrollWidth as an unscaled one). An earlier version of this
+      // function reset the transform imperatively first, "just in case" —
+      // that turned out to be the actual bug: whenever `fit()` ran more
+      // than once and landed on the same scale both times (e.g. the
+      // ResizeObserver below always fires once immediately on
+      // `.observe()`, even with no real resize), React sees the second
+      // `setScale` call as a no-op and skips re-rendering, leaving that
+      // reset's "scale(1)" sitting in the DOM instead of the real scale —
+      // permanently, since nothing ever re-applies it afterward.
       const containerWidth = container!.clientWidth;
       const textWidth = text!.scrollWidth;
       const nextScale = textWidth > containerWidth && textWidth > 0 ? containerWidth / textWidth : 1;
@@ -35,6 +43,15 @@ export function FitText({ children, className = "" }: { children: React.ReactNod
     }
 
     fit();
+
+    // Re-measure once the real display font finishes loading — the very
+    // first `fit()` call above can land before a custom font (next/font
+    // swaps in Bebas Neue only once it's ready) has actually applied, so
+    // it may measure against a fallback font's metrics instead of the
+    // real ones. The container itself doesn't resize when the font
+    // swaps in, so ResizeObserver alone wouldn't catch this.
+    document.fonts?.ready?.then(fit);
+
     const observer = new ResizeObserver(fit);
     observer.observe(container);
     return () => observer.disconnect();
