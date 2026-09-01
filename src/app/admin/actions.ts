@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -16,6 +16,25 @@ import {
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
+// Generous enough that a real admin fumbling their own password a couple
+// of times never gets locked out, strict enough that brute-forcing even
+// a short password across the full window is impractical — this login
+// only has one legitimate user, so unlike the public-facing forms
+// elsewhere in this app, there's no realistic "many different real
+// people share an IP" case to stay generous for here.
+const LOGIN_RATE_LIMIT_MAX = 5;
+const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+
+function getClientIp(headersList: Headers): string | null {
+  // Vercel sets this to "client, proxy1, proxy2..." — the first entry is
+  // the original requester. Not set for local `curl`/dev traffic with no
+  // proxy in front, in which case rate limiting simply doesn't apply —
+  // acceptable here the same way it is for the notify-signup route,
+  // since Vercel reliably sets it in production, which is what matters.
+  const forwardedFor = headersList.get("x-forwarded-for");
+  return forwardedFor?.split(",")[0]?.trim() || null;
+}
+
 /** Redirects to /admin/login unless the session cookie is valid. Exported
  * so admin/page.tsx can reuse the exact same check instead of keeping its
  * own copy that could drift out of sync. */
@@ -28,10 +47,34 @@ export async function requireAdmin() {
 }
 
 export async function loginAdminAction(formData: FormData) {
+  const ipAddress = getClientIp(await headers());
+
+  if (ipAddress) {
+    const recentFailures = await prisma.adminLoginAttempt.count({
+      where: { ipAddress, createdAt: { gte: new Date(Date.now() - LOGIN_RATE_LIMIT_WINDOW_MS) } },
+    });
+    if (recentFailures >= LOGIN_RATE_LIMIT_MAX) {
+      redirect("/admin/login?error=rate_limited");
+    }
+  }
+
   const password = String(formData.get("password") ?? "");
   if (!verifyAdminPassword(password)) {
+    if (ipAddress) {
+      // Best-effort — a transient DB hiccup here shouldn't itself block
+      // the normal "wrong password" response.
+      await prisma.adminLoginAttempt.create({ data: { ipAddress } }).catch(() => {});
+    }
     redirect("/admin/login?error=1");
   }
+
+  // A real login succeeded — this IP's failure history (if any) no
+  // longer reflects an ongoing attack, so there's nothing left to rate
+  // limit against.
+  if (ipAddress) {
+    await prisma.adminLoginAttempt.deleteMany({ where: { ipAddress } }).catch(() => {});
+  }
+
   const cookieStore = await cookies();
   cookieStore.set(ADMIN_SESSION_COOKIE, createSessionToken(), {
     httpOnly: true,

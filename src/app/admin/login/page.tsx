@@ -23,7 +23,12 @@ export default async function AdminLoginPage({
           placeholder="Password"
           className="rounded-xl border border-line bg-bg-raised px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
-        {error && (
+        {error === "rate_limited" && (
+          <p role="alert" className="text-sm text-magenta">
+            Too many attempts — wait a few minutes and try again.
+          </p>
+        )}
+        {error && error !== "rate_limited" && (
           <p role="alert" className="text-sm text-magenta">
             Incorrect password.
           </p>

@@ -269,3 +269,15 @@ model NotifySignup {
 
   @@index([ipAddress, createdAt])
 }
+
+/// One failed /admin/login attempt, kept only long enough to rate-limit
+/// further guesses from the same source — see loginAdminAction. A
+/// successful login never creates a row here (and clears any existing
+/// ones for that IP), so this only ever reflects recent *failures*.
+model AdminLoginAttempt {
+  id        String   @id @default(cuid())
+  ipAddress String
+  createdAt DateTime @default(now())
+
+  @@index([ipAddress, createdAt])
+}
