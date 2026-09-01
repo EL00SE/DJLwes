@@ -1,72 +1,111 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { mintAdminSessionCookie } from "./admin-auth";
 
-// Read-only layout checks — no login, no form submissions, nothing that
-// writes to the database (this app's local/dev database is the same one
-// production runs on, so that's a hard requirement, not just caution).
+// Read-only layout checks — no login-form submissions, no writes to the
+// database (this app's local/dev database is the same one production
+// runs on, so that's a hard requirement, not just caution — admin pages
+// are reached by injecting a session cookie directly, see admin-auth.ts).
 // Runs against each mobile viewport in playwright.config.ts.
 //
-// These three checks exist because all three failed silently in real
-// use before being caught in a manual audit: a long past-event title
-// overflowed off the edge of the screen, and the mobile menu's dimming
-// backdrop only ever covered the header bar instead of the whole page.
-// Neither produced a console error or a broken build — just a visibly
-// wrong result you'd only notice by actually looking on a phone.
+// The overflow/FitText/backdrop checks exist because all three failed
+// silently in real use before being caught in a manual audit — none of
+// them produced a console error or a broken build, just a visibly wrong
+// result you'd only notice by actually looking on a phone.
 
-const PAGES = ["/", "/past-events"];
-
-for (const path of PAGES) {
-  test(`no horizontal overflow on ${path}`, async ({ page }) => {
-    await page.goto(path);
-    const { scrollWidth, innerWidth } = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      innerWidth: window.innerWidth,
-    }));
-    expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
-  });
-
-  test(`FitText titles fit their container on ${path}`, async ({ page }) => {
-    await page.goto(path);
-    const containers = page.getByTestId("fit-text-container");
-    const count = await containers.count();
-
-    for (let i = 0; i < count; i++) {
-      const container = containers.nth(i);
-      const inner = container.getByTestId("fit-text-inner");
-      // FitText settles over a short window (it retries its measurement
-      // a few times to outlast a font-swap race — see fit-text.tsx) —
-      // poll rather than checking once immediately after navigation.
-      await expect
-        .poll(
-          async () => {
-            const [containerBox, innerBox] = await Promise.all([container.boundingBox(), inner.boundingBox()]);
-            if (!containerBox || !innerBox) return 0;
-            return innerBox.width - containerBox.width;
-          },
-          { timeout: 2000 }
-        )
-        // +1px tolerance for sub-pixel rounding between the two measurements.
-        .toBeLessThanOrEqual(1);
-    }
-  });
+async function expectNoHorizontalOverflow(page: Page) {
+  const { scrollWidth, innerWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
 }
 
-test("mobile menu backdrop dims the whole page, not just the header", async ({ page }) => {
-  await page.goto("/");
-  const hamburger = page.getByRole("button", { name: "Open menu" });
+async function expectFitTextFits(page: Page) {
+  const containers = page.getByTestId("fit-text-container");
+  const count = await containers.count();
 
-  // Only present below the `sm:` breakpoint — skip on any project wide
-  // enough to show the full desktop nav instead.
-  if (!(await hamburger.isVisible())) test.skip();
+  for (let i = 0; i < count; i++) {
+    const container = containers.nth(i);
+    const inner = container.getByTestId("fit-text-inner");
+    // FitText settles over a short window (it retries its measurement a
+    // few times to outlast a font-swap race — see fit-text.tsx) — poll
+    // rather than checking once immediately after navigation.
+    await expect
+      .poll(
+        async () => {
+          const [containerBox, innerBox] = await Promise.all([container.boundingBox(), inner.boundingBox()]);
+          if (!containerBox || !innerBox) return 0;
+          return innerBox.width - containerBox.width;
+        },
+        { timeout: 2000 }
+      )
+      // +1px tolerance for sub-pixel rounding between the two measurements.
+      .toBeLessThanOrEqual(1);
+  }
+}
 
-  await hamburger.click();
+test.describe("public pages", () => {
+  const PAGES = ["/", "/past-events", "/admin/login", "/this-page-does-not-exist"];
 
-  const backdrop = page.locator('button[aria-label="Close menu"].fixed.inset-0');
-  await expect(backdrop).toHaveCSS("opacity", "1");
+  for (const path of PAGES) {
+    test(`no horizontal overflow on ${path}`, async ({ page }) => {
+      await page.goto(path);
+      await expectNoHorizontalOverflow(page);
+    });
 
-  const box = await backdrop.boundingBox();
-  const viewport = page.viewportSize();
-  expect(box).not.toBeNull();
-  expect(viewport).not.toBeNull();
-  expect(box!.width).toBeCloseTo(viewport!.width, 0);
-  expect(box!.height).toBeCloseTo(viewport!.height, 0);
+    test(`FitText titles fit their container on ${path}`, async ({ page }) => {
+      await page.goto(path);
+      await expectFitTextFits(page);
+    });
+  }
+
+  test("mobile menu backdrop dims the whole page, not just the header", async ({ page }) => {
+    await page.goto("/");
+    const hamburger = page.getByRole("button", { name: "Open menu" });
+
+    // Only present below the `sm:` breakpoint — skip on any project wide
+    // enough to show the full desktop nav instead.
+    if (!(await hamburger.isVisible())) test.skip();
+
+    await hamburger.click();
+
+    const backdrop = page.locator('button[aria-label="Close menu"].fixed.inset-0');
+    await expect(backdrop).toHaveCSS("opacity", "1");
+
+    const box = await backdrop.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    expect(box!.width).toBeCloseTo(viewport!.width, 0);
+    expect(box!.height).toBeCloseTo(viewport!.height, 0);
+  });
+});
+
+test.describe("admin pages (signed in)", () => {
+  const ADMIN_PAGES = ["/admin", "/admin/about", "/admin/events", "/admin/events/new"];
+
+  test.beforeEach(async ({ context, baseURL }) => {
+    const token = mintAdminSessionCookie();
+    test.skip(!token, "ADMIN_PASSWORD isn't set locally — can't sign in to check admin pages.");
+    await context.addCookies([{ name: "admin_session", value: token!, url: baseURL }]);
+  });
+
+  for (const path of ADMIN_PAGES) {
+    test(`no horizontal overflow on ${path}`, async ({ page }) => {
+      await page.goto(path);
+      await expectNoHorizontalOverflow(page);
+    });
+  }
+
+  test("about page's photo remove button is reachable without hover", async ({ page }) => {
+    await page.goto("/admin/about");
+    const removeButtons = page.getByRole("button", { name: "Remove photo" });
+    const count = await removeButtons.count();
+    if (count === 0) test.skip(true, "No photos currently set on /admin/about to check.");
+    // Regression check for a real bug: this button used to only appear
+    // on :hover, which doesn't exist on a touchscreen. `toBeVisible`
+    // fails on opacity:0-and-not-hovered, which is exactly how that bug
+    // looked.
+    await expect(removeButtons.first()).toBeVisible();
+  });
 });
