@@ -79,6 +79,44 @@ test.describe("public pages", () => {
     expect(box!.width).toBeCloseTo(viewport!.width, 0);
     expect(box!.height).toBeCloseTo(viewport!.height, 0);
   });
+
+  test("About link scrolls to the About section when navigating from a different page", async ({
+    page,
+  }) => {
+    // Regression check for a real bug: clicking "About" while already on
+    // "/" worked fine (the target is already on the page), but clicking
+    // it from a different page navigated to "/#about" without ever
+    // actually scrolling there — the About section hadn't streamed into
+    // the DOM yet by the time Next's own scroll-to-hash gave up, and it
+    // never retries. See hash-scroll-fix.tsx.
+    await page.goto("/past-events");
+    const hamburger = page.getByRole("button", { name: "Open menu" });
+    if (await hamburger.isVisible()) {
+      await hamburger.click({ force: true });
+    }
+    await page.getByRole("link", { name: "About", exact: true }).click();
+
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            const el = document.getElementById("about");
+            if (!el) return false;
+            const r = el.getBoundingClientRect();
+            return r.top < window.innerHeight && r.bottom > 0;
+          }),
+        { timeout: 3000 }
+      )
+      .toBe(true);
+  });
+
+  test("mobile menu has no Admin Dashboard link when signed out", async ({ page }) => {
+    await page.goto("/");
+    const hamburger = page.getByRole("button", { name: "Open menu" });
+    if (!(await hamburger.isVisible())) test.skip();
+    await hamburger.click({ force: true });
+    await expect(page.getByRole("link", { name: /Admin Dashboard/ })).toHaveCount(0);
+  });
 });
 
 test.describe("admin pages (signed in)", () => {
@@ -107,5 +145,16 @@ test.describe("admin pages (signed in)", () => {
     // fails on opacity:0-and-not-hovered, which is exactly how that bug
     // looked.
     await expect(removeButtons.first()).toBeVisible();
+  });
+
+  test("mobile menu offers a way back to the dashboard when signed in", async ({ page }) => {
+    await page.goto("/");
+    const hamburger = page.getByRole("button", { name: "Open menu" });
+    if (!(await hamburger.isVisible())) test.skip();
+    await hamburger.click({ force: true });
+    const link = page.getByRole("link", { name: /Admin Dashboard/ });
+    await expect(link).toBeVisible();
+    await link.click();
+    await expect(page).toHaveURL(/\/admin$/);
   });
 });

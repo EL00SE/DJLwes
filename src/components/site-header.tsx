@@ -13,7 +13,7 @@ const NAV_LINKS = [
   { href: "/past-events", label: "Past Events" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const topBarRef = useRef<HTMLDivElement>(null);
   const [topBarHeight, setTopBarHeight] = useState(0);
@@ -157,6 +157,28 @@ export function SiteHeader() {
                     {link.label}
                   </Link>
                 ))}
+                {/* Only ever rendered for a visitor with a valid admin
+                    session (checked server-side in layout.tsx — the
+                    session cookie is httpOnly, so this can't be spoofed
+                    from here) — a quick way back to the dashboard while
+                    managing content from a phone, without hunting for
+                    the /admin URL. Set apart with its own divider since
+                    it's a different kind of link from the public nav
+                    above it. */}
+                {isAdmin && (
+                  <>
+                    <div className="my-1 border-t border-line" />
+                    <Link
+                      href="/admin"
+                      tabIndex={isMenuOpen ? 0 : -1}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center justify-between rounded-xl px-4 py-3 text-accent-bright transition-colors hover:bg-bg-raised-2 active:bg-bg-raised-2"
+                    >
+                      Admin Dashboard
+                      <span aria-hidden>→</span>
+                    </Link>
+                  </>
+                )}
               </nav>
             </div>
           </>,

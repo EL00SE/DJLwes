@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { siteConfig } from "@/lib/site-config";
 import { buildSocialMetadata } from "@/lib/metadata";
+import { isAdminRequest } from "@/lib/admin-auth";
 import "./globals.css";
 
 const displayFont = Bebas_Neue({
@@ -43,7 +44,13 @@ export const viewport: Viewport = {
   themeColor: "#08060d",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Server-side only — the session cookie is httpOnly, so this is the
+  // only place that can actually tell whether an admin is signed in.
+  // Passed down as a plain prop so SiteHeader only needs to know whether
+  // to show the link, never touching the cookie itself.
+  const isAdmin = await isAdminRequest();
+
   return (
     <html
       lang="en"
@@ -61,7 +68,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <div className="grain-overlay" />
         <div className="relative z-10 flex min-h-full flex-1 flex-col">
-          <SiteHeader />
+          <SiteHeader isAdmin={isAdmin} />
           <main id="main-content" className="flex-1">
             {children}
           </main>
