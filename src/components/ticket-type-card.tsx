@@ -54,7 +54,7 @@ export function TicketTypeCard({
               ? "cursor-not-allowed border border-line text-ink-faint"
               : isSelected
                 ? "bg-accent text-white shadow-[0_0_24px_-4px_var(--color-accent)]"
-                : "border border-accent-dim text-accent-bright hover:bg-accent hover:text-white hover:shadow-[0_0_24px_-4px_var(--color-accent)]"
+                : "border border-accent-dim text-accent-bright hover:bg-accent hover:text-white active:bg-accent active:text-white hover:shadow-[0_0_24px_-4px_var(--color-accent)]"
           }`}
         >
           {soldOut ? "Sold Out" : isSelected ? "Selected" : "Buy"}

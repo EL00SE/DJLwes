@@ -60,7 +60,7 @@ function CaptionEditForm({
         <button
           type="submit"
           disabled={isSaving}
-          className="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
         >
           {isSaving && <Spinner size={10} />}
           Save
@@ -181,7 +181,11 @@ export function GalleryItemsManager({ eventId, initial }: { eventId: string; ini
             <button
               type="button"
               onClick={() => setEditingId(item.id)}
-              className="flex-1 text-left text-sm text-ink-muted transition-colors hover:text-ink"
+              // min-w-0 keeps a long caption from pushing this row wider
+              // than the screen instead of shrinking (flex items default
+              // to min-width:auto, i.e. never smaller than their content)
+              // — the classic cause of a phantom horizontal scrollbar.
+              className="min-w-0 flex-1 truncate text-left text-sm text-ink-muted transition-colors hover:text-ink active:text-ink"
             >
               {item.caption || <span className="italic text-ink-faint">No caption — click to add</span>}
             </button>
@@ -193,7 +197,7 @@ export function GalleryItemsManager({ eventId, initial }: { eventId: string; ini
               onClick={() => handleReorder(item.id, "up")}
               disabled={i === 0 || busyId === item.id}
               aria-label="Move up"
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-line-strong text-ink-muted transition-colors hover:text-ink disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-line-strong text-ink-muted transition-colors hover:text-ink active:text-ink disabled:opacity-30"
             >
               ↑
             </button>
@@ -202,7 +206,7 @@ export function GalleryItemsManager({ eventId, initial }: { eventId: string; ini
               onClick={() => handleReorder(item.id, "down")}
               disabled={i === initial.length - 1 || busyId === item.id}
               aria-label="Move down"
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-line-strong text-ink-muted transition-colors hover:text-ink disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-line-strong text-ink-muted transition-colors hover:text-ink active:text-ink disabled:opacity-30"
             >
               ↓
             </button>
@@ -210,7 +214,7 @@ export function GalleryItemsManager({ eventId, initial }: { eventId: string; ini
               type="button"
               onClick={() => handleDelete(item.id)}
               disabled={busyId === item.id}
-              className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-muted transition-colors hover:border-magenta hover:text-magenta disabled:opacity-50"
+              className="flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 font-mono text-[10px] uppercase tracking-wide text-ink-muted transition-colors hover:border-magenta hover:text-magenta active:border-magenta active:text-magenta disabled:opacity-50"
             >
               {busyId === item.id && <Spinner size={10} />}
               Delete

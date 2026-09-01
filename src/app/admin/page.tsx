@@ -98,7 +98,7 @@ export default async function AdminPage() {
           </Link>
           <Link
             href="/admin/events"
-            className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
+            className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 active:opacity-80"
           >
             Manage Events →
           </Link>
@@ -185,7 +185,7 @@ export default async function AdminPage() {
                   <form action={approveGuestRequestAction.bind(null, request.id)}>
                     <button
                       type="submit"
-                      className="rounded-full bg-accent px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
+                      className="rounded-full bg-accent px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 active:opacity-80"
                     >
                       Approve
                     </button>
@@ -275,7 +275,7 @@ export default async function AdminPage() {
                   <form action={confirmOrderAction.bind(null, order.id)}>
                     <button
                       type="submit"
-                      className="rounded-full bg-accent px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
+                      className="rounded-full bg-accent px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 active:opacity-80"
                     >
                       Approve
                     </button>

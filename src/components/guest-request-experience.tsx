@@ -41,7 +41,7 @@ export function GuestRequestExperience({
           <button
             type="button"
             onClick={scrollToPanel}
-            className="rounded-full bg-accent px-4 py-2 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 lg:hidden"
+            className="rounded-full bg-accent px-4 py-2 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 active:opacity-80 lg:hidden"
           >
             Request to Join
           </button>

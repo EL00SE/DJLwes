@@ -32,6 +32,33 @@ html {
   color-scheme: dark;
 }
 
+/* Mobile touch polish — most visitors land here from a phone.
+ * - Drops the default gray/blue flash Android/iOS paint on every tap,
+ *   which clashes with the dark neon theme; real tap feedback comes from
+ *   each interactive element's own `active:` classes instead.
+ * - `touch-action: manipulation` skips the ~300ms delay mobile browsers
+ *   otherwise wait before firing a tap, to see if it's the first half of
+ *   a double-tap-to-zoom gesture — buttons/links here don't need that. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* Keeps every text input at a readable size and, just as important,
+ * stops iOS Safari's "zoom in on focus" behavior, which WebKit triggers
+ * on any focused input/textarea/select under 16px — regardless of
+ * Tailwind's text-sm/text-xs utilities, since this rule is unlayered and
+ * therefore wins over Tailwind's (layered) utility classes without
+ * needing !important. */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
 /* Smooth-scrolls anchor jumps (e.g. the header's About link) — gated on
  * prefers-reduced-motion the same way ScrollReveal is, so a reduced-motion
  * visitor gets an instant jump instead of an animated one. */

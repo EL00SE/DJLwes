@@ -56,7 +56,7 @@ export default async function HomePage() {
         </p>
         <Link
           href="/past-events"
-          className="mt-4 rounded-full border border-accent-dim px-6 py-2.5 font-mono text-xs uppercase tracking-[0.2em] text-accent-bright transition-colors hover:bg-accent hover:text-white"
+          className="mt-4 rounded-full border border-accent-dim px-6 py-2.5 font-mono text-xs uppercase tracking-[0.2em] text-accent-bright transition-colors hover:bg-accent hover:text-white active:bg-accent active:text-white"
         >
           See Past Events
         </Link>

@@ -19,7 +19,7 @@ export default async function AdminEventsPage() {
         </div>
         <Link
           href="/admin/events/new"
-          className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90"
+          className="rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 active:opacity-80"
         >
           + New Event
         </Link>

@@ -37,7 +37,7 @@ export function HomepageGalleryTeaser({
           </div>
           <Link
             href="/past-events"
-            className="font-mono text-xs uppercase tracking-[0.15em] text-ink-faint transition-colors hover:text-accent-bright"
+            className="font-mono text-xs uppercase tracking-[0.15em] text-ink-faint transition-colors hover:text-accent-bright active:text-accent-bright"
           >
             See all past events →
           </Link>

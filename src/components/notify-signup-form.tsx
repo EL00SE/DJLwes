@@ -77,7 +77,7 @@ export function NotifySignupForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-accent px-5 py-2.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
       >
         {isSubmitting ? <Spinner size={13} /> : "Notify me"}
       </button>

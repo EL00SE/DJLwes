@@ -90,13 +90,17 @@ export function AboutContentForm({
         {photos.length > 0 && (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {photos.map((url) => (
-              <div key={url} className="group relative aspect-square overflow-hidden rounded-xl border border-line">
+              <div key={url} className="relative aspect-square overflow-hidden rounded-xl border border-line">
                 <Image src={url} alt="" fill className="object-cover" unoptimized />
                 <button
                   type="button"
                   onClick={() => removePhoto(url)}
                   aria-label="Remove photo"
-                  className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-bg/80 text-ink-muted opacity-0 transition-opacity hover:text-magenta group-hover:opacity-100"
+                  // Always visible (not hover-gated) — a touch screen has
+                  // no hover state, so a hover-only reveal would leave
+                  // this permanently un-tappable on a phone, which is how
+                  // the admin is as likely as not to be managing this.
+                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-bg/80 text-ink-muted transition-colors hover:text-magenta active:text-magenta"
                 >
                   ×
                 </button>
@@ -139,7 +143,7 @@ export function AboutContentForm({
         <button
           type="submit"
           disabled={isSubmitting || isUploading}
-          className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
         >
           {isSubmitting && <Spinner size={14} />}
           {isSubmitting ? "Saving…" : "Save changes"}

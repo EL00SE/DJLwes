@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Inter, Space_Mono } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -33,6 +33,14 @@ export const metadata: Metadata = {
     description: siteConfig.tagline,
     image: "/images/event-cover-boiler.svg",
   }),
+};
+
+// Colors the browser chrome itself on mobile (Android's address bar, and
+// iOS when added to the home screen) to match the site instead of
+// showing the browser's default white/gray. Zoom is left fully enabled —
+// capping it is an accessibility anti-pattern some sites still use.
+export const viewport: Viewport = {
+  themeColor: "#08060d",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

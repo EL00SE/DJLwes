@@ -135,7 +135,7 @@ function TierEditForm({
         <button
           type="submit"
           disabled={isSaving}
-          className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
         >
           {isSaving && <Spinner size={12} />}
           {isSaving ? "Saving…" : tier ? "Save" : "Add tier"}

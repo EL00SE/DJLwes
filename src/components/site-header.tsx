@@ -60,7 +60,7 @@ export function SiteHeader() {
           onClick={() => setIsMenuOpen((open) => !open)}
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           aria-expanded={isMenuOpen}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink transition-colors hover:text-accent-bright sm:hidden"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink transition-colors hover:text-accent-bright active:text-accent-bright sm:hidden"
         >
           <span className="relative block h-4 w-5">
             <span
@@ -111,7 +111,7 @@ export function SiteHeader() {
               href={link.href}
               tabIndex={isMenuOpen ? 0 : -1}
               onClick={() => setIsMenuOpen(false)}
-              className="rounded-xl px-4 py-3 text-ink-muted transition-colors hover:bg-bg-raised-2 hover:text-ink"
+              className="rounded-xl px-4 py-3 text-ink-muted transition-colors hover:bg-bg-raised-2 hover:text-ink active:bg-bg-raised-2 active:text-ink"
             >
               {link.label}
             </Link>

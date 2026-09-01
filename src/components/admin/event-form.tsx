@@ -270,7 +270,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         <button
           type="submit"
           disabled={isSubmitting || isUploading}
-          className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full bg-accent px-6 py-3 font-mono text-sm uppercase tracking-[0.2em] text-white shadow-[0_0_30px_-6px_var(--color-accent)] transition-opacity hover:opacity-90 active:opacity-80 disabled:opacity-50"
         >
           {isSubmitting && <Spinner size={14} />}
           {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Create event"}
