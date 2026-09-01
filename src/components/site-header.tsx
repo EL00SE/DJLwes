@@ -88,6 +88,20 @@ export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
               {link.label}
             </Link>
           ))}
+          {/* Same isAdmin check as the mobile menu's version below — see
+              that one's comment for why this is safe (server-checked,
+              httpOnly cookie). Set apart with a divider, same as there. */}
+          {isAdmin && (
+            <>
+              <div aria-hidden className="mx-1 h-4 w-px bg-line" />
+              <Link
+                href="/admin"
+                className="whitespace-nowrap rounded-full px-4 py-2 text-accent-bright transition-colors hover:text-ink"
+              >
+                Admin Dashboard
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Hamburger toggle below `sm:` */}
