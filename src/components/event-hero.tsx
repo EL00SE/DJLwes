@@ -10,12 +10,14 @@ export function EventHero({
   date,
   location,
   coverImage,
+  coverImageFocalPoint,
 }: {
   title: string;
   description: string;
   date: Date;
   location: string;
   coverImage: string;
+  coverImageFocalPoint: string;
 }) {
   return (
     <section className="relative overflow-hidden border-b border-line">
@@ -68,6 +70,7 @@ export function EventHero({
             priority
             sizes="(min-width: 1024px) 480px, 100vw"
             className="object-cover"
+            style={{ objectPosition: coverImageFocalPoint }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-bg/80 via-transparent to-transparent" />
         </div>

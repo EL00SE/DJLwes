@@ -13,7 +13,14 @@ function readAdminPassword(): string | undefined {
   if (process.env.ADMIN_PASSWORD) return process.env.ADMIN_PASSWORD;
   try {
     const env = readFileSync(".env", "utf-8");
-    return env.match(/^ADMIN_PASSWORD=(.*)$/m)?.[1]?.trim();
+    const raw = env.match(/^ADMIN_PASSWORD=(.*)$/m)?.[1]?.trim();
+    if (!raw) return undefined;
+    // .env values are often quoted (e.g. ADMIN_PASSWORD="wearelive") —
+    // Next.js's own .env loader strips a matching pair of quotes before
+    // it ever reaches process.env, so this has to as well or it signs
+    // with a password that doesn't match what the server actually has.
+    const quoted = raw.match(/^(['"])(.*)\1$/);
+    return quoted ? quoted[2] : raw;
   } catch {
     return undefined;
   }

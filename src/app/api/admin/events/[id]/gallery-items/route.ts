@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       { status: 400 }
     );
   }
-  const { type, url, caption } = parsed.data;
+  const { type, url, caption, focalPoint } = parsed.data;
 
   const item = await prisma.galleryItem.create({
     data: {
@@ -40,6 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       type,
       url,
       caption: caption || null,
+      focalPoint,
       sortOrder: (lastItem?.sortOrder ?? -1) + 1,
     },
   });

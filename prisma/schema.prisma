@@ -21,7 +21,12 @@ model Event {
   date        DateTime
   location    String
   coverImage  String
-  isActive    Boolean  @default(false)
+  /// CSS object-position value ("50% 50%" = centered) for coverImage —
+  /// lets the admin choose what stays in frame when the same photo gets
+  /// cropped differently across the site (portrait hero, wide hero,
+  /// square gallery tiles) instead of always center-cropping.
+  coverImageFocalPoint String  @default("50% 50%")
+  isActive             Boolean @default(false)
 
   /// External checkout link for this event (a Grow-hosted payment page —
   /// Grow owns pricing/quantity/invoicing from here). Null until the admin
@@ -88,6 +93,9 @@ model GalleryItem {
   url     String
   caption String?
   sortOrder Int           @default(0)
+  /// CSS object-position value ("50% 50%" = centered) — see
+  /// Event.coverImageFocalPoint for why this exists.
+  focalPoint String @default("50% 50%")
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 

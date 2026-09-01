@@ -14,10 +14,14 @@ export function AutoplayVideo({
   src,
   className,
   ariaLabel,
+  focalPoint,
 }: {
   src: string;
   className?: string;
   ariaLabel?: string;
+  /** A CSS object-position value ("50% 50%" = centered) — see
+   * Event.coverImageFocalPoint for why this exists. */
+  focalPoint?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
 
@@ -36,6 +40,7 @@ export function AutoplayVideo({
       ref={ref}
       src={src}
       className={className}
+      style={focalPoint ? { objectPosition: focalPoint } : undefined}
       muted
       loop
       playsInline

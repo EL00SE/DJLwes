@@ -30,11 +30,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       { status: 400 }
     );
   }
-  const { type, url, caption } = parsed.data;
+  const { type, url, caption, focalPoint } = parsed.data;
 
   await prisma.galleryItem.update({
     where: { id },
-    data: { type, url, caption: caption || null },
+    data: { type, url, caption: caption || null, focalPoint },
   });
 
   return NextResponse.json({ id });

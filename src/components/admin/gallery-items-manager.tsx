@@ -5,15 +5,24 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { Spinner } from "@/components/spinner";
+import { FocalPointPicker, type FocalPointPreviewShape } from "@/components/admin/focal-point-picker";
+
+// Gallery items are always shown as squares (see past-event-section.tsx
+// and homepage-gallery-teaser.tsx) — just the one preview shape, unlike
+// the event cover image.
+const GALLERY_ITEM_PREVIEW_SHAPES: FocalPointPreviewShape[] = [
+  { label: "Gallery", aspectClassName: "aspect-square" },
+];
 
 export type GalleryItemRow = {
   id: string;
   type: "IMAGE" | "VIDEO";
   url: string;
   caption: string | null;
+  focalPoint: string;
 };
 
-function CaptionEditForm({
+function ItemEditForm({
   item,
   onDone,
 }: {
@@ -22,6 +31,7 @@ function CaptionEditForm({
 }) {
   const router = useRouter();
   const [caption, setCaption] = useState(item.caption ?? "");
+  const [focalPoint, setFocalPoint] = useState(item.focalPoint);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +43,7 @@ function CaptionEditForm({
       const res = await fetch(`/api/admin/gallery-items/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: item.type, url: item.url, caption }),
+        body: JSON.stringify({ type: item.type, url: item.url, caption, focalPoint }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
@@ -47,7 +57,15 @@ function CaptionEditForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-1.5">
+    <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-3">
+      {item.type === "IMAGE" && (
+        <FocalPointPicker
+          src={item.url}
+          value={focalPoint}
+          onChange={setFocalPoint}
+          previewShapes={GALLERY_ITEM_PREVIEW_SHAPES}
+        />
+      )}
       <div className="flex gap-2">
         <input
           autoFocus
@@ -166,60 +184,75 @@ export function GalleryItemsManager({ eventId, initial }: { eventId: string; ini
       )}
 
       {initial.map((item, i) => (
-        <div key={item.id} className="flex items-center gap-3 rounded-xl border border-line p-3">
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-line bg-bg-raised">
-            {item.type === "VIDEO" ? (
-              <video src={item.url} className="h-full w-full object-cover" muted playsInline />
-            ) : (
-              <Image src={item.url} alt="" fill className="object-cover" unoptimized />
-            )}
-          </div>
-
+        <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-line p-3">
           {editingId === item.id ? (
-            <CaptionEditForm item={item} onDone={() => setEditingId(null)} />
+            <ItemEditForm item={item} onDone={() => setEditingId(null)} />
           ) : (
-            <button
-              type="button"
-              onClick={() => setEditingId(item.id)}
-              // min-w-0 keeps a long caption from pushing this row wider
-              // than the screen instead of shrinking (flex items default
-              // to min-width:auto, i.e. never smaller than their content)
-              // — the classic cause of a phantom horizontal scrollbar.
-              className="min-w-0 flex-1 truncate text-left text-sm text-ink-muted transition-colors hover:text-ink active:text-ink"
-            >
-              {item.caption || <span className="italic text-ink-faint">No caption — click to add</span>}
-            </button>
-          )}
+            <div className="flex items-center gap-3">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-line bg-bg-raised">
+                {item.type === "VIDEO" ? (
+                  <video
+                    src={item.url}
+                    className="h-full w-full object-cover"
+                    style={{ objectPosition: item.focalPoint }}
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <Image
+                    src={item.url}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    style={{ objectPosition: item.focalPoint }}
+                    unoptimized
+                  />
+                )}
+              </div>
 
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => handleReorder(item.id, "up")}
-              disabled={i === 0 || busyId === item.id}
-              aria-label="Move up"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-line-strong text-ink-muted transition-colors hover:text-ink active:text-ink disabled:opacity-30"
-            >
-              ↑
-            </button>
-            <button
-              type="button"
-              onClick={() => handleReorder(item.id, "down")}
-              disabled={i === initial.length - 1 || busyId === item.id}
-              aria-label="Move down"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-line-strong text-ink-muted transition-colors hover:text-ink active:text-ink disabled:opacity-30"
-            >
-              ↓
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDelete(item.id)}
-              disabled={busyId === item.id}
-              className="flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 font-mono text-[10px] uppercase tracking-wide text-ink-muted transition-colors hover:border-magenta hover:text-magenta active:border-magenta active:text-magenta disabled:opacity-50"
-            >
-              {busyId === item.id && <Spinner size={10} />}
-              Delete
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setEditingId(item.id)}
+                // min-w-0 keeps a long caption from pushing this row wider
+                // than the screen instead of shrinking (flex items default
+                // to min-width:auto, i.e. never smaller than their content)
+                // — the classic cause of a phantom horizontal scrollbar.
+                className="min-w-0 flex-1 truncate text-left text-sm text-ink-muted transition-colors hover:text-ink active:text-ink"
+              >
+                {item.caption || <span className="italic text-ink-faint">No caption — click to edit</span>}
+              </button>
+
+              <div className="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleReorder(item.id, "up")}
+                  disabled={i === 0 || busyId === item.id}
+                  aria-label="Move up"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-line-strong text-ink-muted transition-colors hover:text-ink active:text-ink disabled:opacity-30"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReorder(item.id, "down")}
+                  disabled={i === initial.length - 1 || busyId === item.id}
+                  aria-label="Move down"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-line-strong text-ink-muted transition-colors hover:text-ink active:text-ink disabled:opacity-30"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(item.id)}
+                  disabled={busyId === item.id}
+                  className="flex h-9 items-center gap-1.5 rounded-full border border-line-strong px-3 font-mono text-[10px] uppercase tracking-wide text-ink-muted transition-colors hover:border-magenta hover:text-magenta active:border-magenta active:text-magenta disabled:opacity-50"
+                >
+                  {busyId === item.id && <Spinner size={10} />}
+                  Delete
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ))}
 
@@ -231,14 +264,18 @@ export function GalleryItemsManager({ eventId, initial }: { eventId: string; ini
           placeholder="Caption for the next upload (optional)"
           className="rounded-lg border border-line bg-bg/60 px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* min-w-0 matters here — a flex item's default min-width:auto
+              blocks it shrinking below its content's natural size, and a
+              native file input's button+label combo can be wider than
+              the space actually available on a phone. */}
           <input
             ref={fileInputRef}
             type="file"
             accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
             onChange={handleFileChange}
             disabled={isUploading}
-            className="text-sm text-ink-muted file:mr-3 file:rounded-full file:border file:border-line-strong file:bg-transparent file:px-4 file:py-1.5 file:font-mono file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink-muted"
+            className="min-w-0 text-sm text-ink-muted file:mr-3 file:rounded-full file:border file:border-line-strong file:bg-transparent file:px-4 file:py-1.5 file:font-mono file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink-muted"
           />
           {isUploading && (
             <span className="flex items-center gap-1.5 font-mono text-xs text-accent-bright">

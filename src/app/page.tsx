@@ -85,6 +85,7 @@ export default async function HomePage() {
         date={event.date}
         location={event.location}
         coverImage={event.coverImage}
+        coverImageFocalPoint={event.coverImageFocalPoint}
       />
       <LineupSection lineup={event.lineup} />
       <TicketTiersInfo ticketTypes={event.ticketTypes} />

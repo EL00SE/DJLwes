@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { focalPointSchema } from "@/lib/focal-point";
 
 export const eventFormSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
@@ -7,6 +8,7 @@ export const eventFormSchema = z.object({
   date: z.string().trim().min(1, "Date & time are required"),
   location: z.string().trim().min(1, "Location is required").max(200),
   coverImage: z.string().trim().min(1, "A cover image is required"),
+  coverImageFocalPoint: focalPointSchema,
   buyLink: z.string().trim().url("Buy link must be a valid URL").optional().or(z.literal("")),
   lineup: z.string().trim().max(2000).optional().or(z.literal("")),
   entryRequirements: z.string().trim().max(2000).optional().or(z.literal("")),

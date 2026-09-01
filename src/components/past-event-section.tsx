@@ -8,6 +8,7 @@ type GalleryItem = {
   type: "IMAGE" | "VIDEO";
   url: string;
   caption: string | null;
+  focalPoint: string;
 };
 
 export function PastEventSection({
@@ -15,12 +16,14 @@ export function PastEventSection({
   date,
   location,
   coverImage,
+  coverImageFocalPoint,
   galleryItems,
 }: {
   title: string;
   date: Date;
   location: string;
   coverImage: string;
+  coverImageFocalPoint: string;
   galleryItems: GalleryItem[];
 }) {
   return (
@@ -47,6 +50,7 @@ export function PastEventSection({
               fill
               sizes="(min-width: 1024px) 480px, 60vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
+              style={{ objectPosition: coverImageFocalPoint }}
             />
           </div>
 
@@ -60,6 +64,7 @@ export function PastEventSection({
                   src={item.url}
                   className="h-full w-full object-cover"
                   ariaLabel={item.caption ?? title}
+                  focalPoint={item.focalPoint}
                 />
               ) : (
                 <Image
@@ -68,6 +73,7 @@ export function PastEventSection({
                   fill
                   sizes="(min-width: 1024px) 240px, 40vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  style={{ objectPosition: item.focalPoint }}
                 />
               )}
               {item.caption && (

@@ -36,6 +36,7 @@ export default async function PastEventsPage() {
             date={event.date}
             location={event.location}
             coverImage={event.coverImage}
+            coverImageFocalPoint={event.coverImageFocalPoint}
             galleryItems={event.galleryItems}
           />
         ))

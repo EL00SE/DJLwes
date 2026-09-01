@@ -35,6 +35,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           dateLocalValue: toEventLocalDateTimeInputValue(event.date),
           location: event.location,
           coverImage: event.coverImage,
+          coverImageFocalPoint: event.coverImageFocalPoint,
           buyLink: event.buyLink ?? "",
           lineup: event.lineup ?? "",
           entryRequirements: event.entryRequirements ?? "",

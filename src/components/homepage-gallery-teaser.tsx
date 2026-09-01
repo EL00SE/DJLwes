@@ -9,6 +9,7 @@ type TeaserItem = {
   type: "IMAGE" | "VIDEO";
   url: string;
   caption: string | null;
+  focalPoint: string;
 };
 
 /** A taste of the most recent past event's photos, right on the
@@ -57,6 +58,7 @@ export function HomepageGalleryTeaser({
                   src={item.url}
                   className="h-full w-full object-cover"
                   ariaLabel={item.caption ?? eventTitle}
+                  focalPoint={item.focalPoint}
                 />
               ) : (
                 <Image
@@ -65,6 +67,7 @@ export function HomepageGalleryTeaser({
                   fill
                   sizes="(min-width: 640px) 320px, 45vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  style={{ objectPosition: item.focalPoint }}
                 />
               )}
             </div>

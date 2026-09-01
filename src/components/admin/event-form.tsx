@@ -1,10 +1,19 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { Spinner } from "@/components/spinner";
+import { FocalPointPicker } from "@/components/admin/focal-point-picker";
+
+// Matches the actual aspect ratios coverImage gets shown at across the
+// site — see event-hero.tsx (which is the one that varies by
+// breakpoint) and past-event-section.tsx.
+const COVER_IMAGE_PREVIEW_SHAPES = [
+  { label: "Hero (mobile)", aspectClassName: "aspect-[4/5]" },
+  { label: "Hero (tablet)", aspectClassName: "aspect-[5/4]" },
+  { label: "Past event", aspectClassName: "aspect-[4/5]" },
+];
 
 export type EventFormInitialValues = {
   id: string;
@@ -14,6 +23,7 @@ export type EventFormInitialValues = {
   dateLocalValue: string;
   location: string;
   coverImage: string;
+  coverImageFocalPoint: string;
   buyLink: string;
   lineup: string;
   entryRequirements: string;
@@ -31,6 +41,9 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
   const [dateLocalValue, setDateLocalValue] = useState(initial?.dateLocalValue ?? "");
   const [location, setLocation] = useState(initial?.location ?? "");
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? "");
+  const [coverImageFocalPoint, setCoverImageFocalPoint] = useState(
+    initial?.coverImageFocalPoint ?? "50% 50%"
+  );
   const [buyLink, setBuyLink] = useState(initial?.buyLink ?? "");
   const [lineup, setLineup] = useState(initial?.lineup ?? "");
   const [entryRequirements, setEntryRequirements] = useState(initial?.entryRequirements ?? "");
@@ -52,6 +65,8 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         handleUploadUrl: "/api/upload",
       });
       setCoverImage(blob.url);
+      // A new photo makes any previous focal point meaningless.
+      setCoverImageFocalPoint("50% 50%");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Image upload failed.");
     } finally {
@@ -77,6 +92,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         date: dateLocalValue,
         location,
         coverImage,
+        coverImageFocalPoint,
         buyLink,
         lineup,
         entryRequirements,
@@ -219,24 +235,25 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
 
       <div className="flex flex-col gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">Cover image</span>
-        <div className="flex items-center gap-4">
-          {coverImage ? (
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-line">
-              <Image src={coverImage} alt="Cover preview" fill className="object-cover" unoptimized />
-            </div>
-          ) : (
+        <div className="flex flex-wrap items-center gap-4">
+          {!coverImage && (
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border border-dashed border-line text-center font-mono text-[10px] text-ink-faint">
               No image
             </div>
           )}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            {/* min-w-0 on the input itself matters, not just its wrapper
+                — a flex item's default min-width:auto blocks it from
+                ever shrinking below its content's natural size, and a
+                native file input's internal button+label combo can be
+                wider than the space actually available on a phone. */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif"
               onChange={handleFileChange}
               disabled={isUploading}
-              className="text-sm text-ink-muted file:mr-3 file:rounded-full file:border file:border-line-strong file:bg-transparent file:px-4 file:py-1.5 file:font-mono file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink-muted"
+              className="min-w-0 text-sm text-ink-muted file:mr-3 file:rounded-full file:border file:border-line-strong file:bg-transparent file:px-4 file:py-1.5 file:font-mono file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink-muted"
             />
             {isUploading && (
               <span className="flex items-center gap-1.5 font-mono text-xs text-accent-bright">
@@ -245,6 +262,17 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
             )}
           </div>
         </div>
+
+        {coverImage && (
+          <div className="mt-2 rounded-xl border border-line bg-bg/40 p-4">
+            <FocalPointPicker
+              src={coverImage}
+              value={coverImageFocalPoint}
+              onChange={setCoverImageFocalPoint}
+              previewShapes={COVER_IMAGE_PREVIEW_SHAPES}
+            />
+          </div>
+        )}
       </div>
 
       <label className="flex items-center gap-2.5 text-sm">

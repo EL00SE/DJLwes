@@ -108,14 +108,18 @@ export function AboutContentForm({
             ))}
           </div>
         )}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* min-w-0 matters here — a flex item's default min-width:auto
+              blocks it shrinking below its content's natural size, and a
+              native file input's button+label combo can be wider than
+              the space actually available on a phone. */}
           <input
             ref={fileInputRef}
             type="file"
             accept="image/png,image/jpeg,image/webp,image/gif"
             onChange={handleFileChange}
             disabled={isUploading}
-            className="text-sm text-ink-muted file:mr-3 file:rounded-full file:border file:border-line-strong file:bg-transparent file:px-4 file:py-1.5 file:font-mono file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink-muted"
+            className="min-w-0 text-sm text-ink-muted file:mr-3 file:rounded-full file:border file:border-line-strong file:bg-transparent file:px-4 file:py-1.5 file:font-mono file:text-xs file:uppercase file:tracking-[0.15em] file:text-ink-muted"
           />
           {isUploading && (
             <span className="flex items-center gap-1.5 font-mono text-xs text-accent-bright">
