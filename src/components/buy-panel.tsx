@@ -1,5 +1,7 @@
 "use client";
 
+// UNUSED — only ever rendered by event-experience.tsx, which nothing
+// imports (see that file for why). Dormant, not a bug.
 import { useMemo, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE, countryFlagEmoji } from "@/lib/country-codes";

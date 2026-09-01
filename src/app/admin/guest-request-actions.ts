@@ -1,5 +1,11 @@
 "use server";
 
+// This file itself is live (admin/page.tsx renders approve/decline
+// buttons wired to these actions), but its only intake form —
+// guest-request-panel.tsx — is currently unreachable from any live page
+// (ticket sales moved to a Grow-hosted link), so no new GuestRequest
+// rows are being created right now. Nothing to fix here; just don't be
+// surprised if the admin dashboard's request list stays empty.
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/app/admin/actions";

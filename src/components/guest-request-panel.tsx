@@ -1,5 +1,7 @@
 "use client";
 
+// UNUSED — only ever rendered by guest-request-experience.tsx, which
+// nothing imports (see that file for why). Dormant, not a bug.
 import { useState } from "react";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_DIAL_CODE, countryFlagEmoji } from "@/lib/country-codes";
 

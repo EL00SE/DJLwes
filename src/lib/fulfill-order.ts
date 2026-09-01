@@ -1,3 +1,6 @@
+// UNUSED — only called from the dormant PayPal webhook and
+// checkout/success page (see those files). No live flow creates the
+// orders this would ever act on. Dormant, not a bug.
 import { prisma } from "@/lib/prisma";
 import { refundPayPalCapture } from "@/lib/paypal";
 import { claimOrderStatus } from "@/lib/orders";

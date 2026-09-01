@@ -1,3 +1,7 @@
+// UNUSED — the POST target of buy-panel.tsx, which nothing renders
+// anymore (ticket sales moved to a Grow-hosted link). Still deployed and
+// technically callable directly, but no live page ever submits to it.
+// Dormant, not a bug.
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";

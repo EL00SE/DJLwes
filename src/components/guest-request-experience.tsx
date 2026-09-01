@@ -1,5 +1,11 @@
 "use client";
 
+// UNUSED — dormant since ticket checkout moved to a Grow-hosted link.
+// Nothing imports this component, so no request submitted through it
+// could actually reach a live page. The admin approve/decline UI for
+// GuestRequest rows (admin/page.tsx, guest-request-actions.ts) is still
+// live — it just currently has no intake feeding it. Kept in case this
+// request-then-approve flow gets revived later.
 import { useRef } from "react";
 import { GuestRequestPanel } from "@/components/guest-request-panel";
 import { TicketTierInfoCard } from "@/components/ticket-tiers-info";

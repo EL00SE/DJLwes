@@ -2,6 +2,10 @@
 
 import { formatPrice } from "@/lib/format";
 
+// Note: TicketTypeSummary below is still live (shared with the homepage's
+// TicketTiersInfo), but the TicketTypeCard component itself is UNUSED —
+// only event-experience.tsx renders it, and nothing imports that. Dormant,
+// not a bug.
 export type TicketTypeSummary = {
   id: string;
   name: string;

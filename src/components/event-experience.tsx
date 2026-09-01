@@ -1,5 +1,9 @@
 "use client";
 
+// UNUSED — dormant since ticket checkout moved to a Grow-hosted link (see
+// BuyTicketsSection, which is what actually renders on the homepage now).
+// Nothing imports this component. Kept in case the in-app PayPal purchase
+// flow gets revived later; safe to ignore until then, not a bug.
 import { useRef, useState } from "react";
 import { TicketTypeCard, type TicketTypeSummary } from "@/components/ticket-type-card";
 import { BuyPanel } from "@/components/buy-panel";

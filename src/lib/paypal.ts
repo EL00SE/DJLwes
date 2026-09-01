@@ -1,5 +1,11 @@
 // Thin wrapper around PayPal's REST API (Orders v2) — no SDK dependency,
 // just fetch. https://developer.paypal.com/docs/api/orders/v2/
+//
+// Only refundPayPalCapture below is still live (admin/actions.ts uses it
+// to refund a declined order). createPayPalOrder, capturePayPalOrder,
+// findApproveLink, and verifyWebhookSignature are UNUSED — they only
+// serve the in-app checkout flow (api/checkout, api/webhooks/paypal),
+// which is dormant since ticket sales moved to a Grow-hosted link.
 const clientId = process.env.PAYPAL_CLIENT_ID;
 const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 // "sandbox" (default, for testing) or "live".

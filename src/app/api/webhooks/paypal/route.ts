@@ -1,3 +1,8 @@
+// UNUSED — confirms/refunds orders created by the in-app PayPal checkout
+// (api/checkout), which nothing can reach anymore since ticket sales
+// moved to a Grow-hosted link. Still deployed (PayPal would still be
+// able to call it if it somehow had a live order to report on), but no
+// live flow creates orders for it to ever fire on. Dormant, not a bug.
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyWebhookSignature } from "@/lib/paypal";
