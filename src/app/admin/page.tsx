@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { formatDateTime, formatEventDate, formatPrice } from "@/lib/format";
+import { formatDateTime, formatPrice } from "@/lib/format";
 import { orderWithDetailsInclude } from "@/lib/orders";
 import {
   confirmOrderAction,
@@ -10,10 +10,6 @@ import {
   resendConfirmationAction,
 } from "@/app/admin/actions";
 import { approveGuestRequestAction, declineGuestRequestAction } from "@/app/admin/guest-request-actions";
-import {
-  closeBookingRequestAction,
-  markBookingRequestContactedAction,
-} from "@/app/admin/booking-request-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -36,16 +32,8 @@ export default async function AdminPage() {
   twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
 
   // Independent queries — run together rather than one after another.
-  const [
-    pendingGuestRequests,
-    recentGuestRequests,
-    pendingOrders,
-    unpaidOrders,
-    recentOrders,
-    notifySignups,
-    activeBookingRequests,
-    closedBookingRequests,
-  ] = await Promise.all([
+  const [pendingGuestRequests, recentGuestRequests, pendingOrders, unpaidOrders, recentOrders, notifySignups] =
+    await Promise.all([
       prisma.guestRequest.findMany({
         where: { status: "PENDING" },
         orderBy: { createdAt: "asc" },
@@ -75,15 +63,6 @@ export default async function AdminPage() {
         include: orderWithDetailsInclude,
       }),
       prisma.notifySignup.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
-      prisma.bookingRequest.findMany({
-        where: { status: { in: ["NEW", "CONTACTED"] } },
-        orderBy: { createdAt: "asc" },
-      }),
-      prisma.bookingRequest.findMany({
-        where: { status: "CLOSED" },
-        orderBy: { updatedAt: "desc" },
-        take: 20,
-      }),
     ]);
 
   return (
@@ -125,84 +104,6 @@ export default async function AdminPage() {
           </Link>
         </div>
       </div>
-
-      <section className="mb-12">
-        <h2 className="mb-4 font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
-          Private booking requests ({activeBookingRequests.length})
-        </h2>
-
-        {activeBookingRequests.length === 0 ? (
-          <p className="mb-6 text-ink-muted">Nothing waiting on you right now.</p>
-        ) : (
-          <div className="mb-6 flex flex-col gap-4">
-            {activeBookingRequests.map((request) => (
-              <div key={request.id} className="card-edge rounded-2xl border border-line p-5">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="font-display text-2xl tracking-wide text-ink">{request.customerName}</p>
-                    <p className="mt-1 text-sm text-ink-muted">
-                      {[request.customerEmail, request.customerPhone].filter(Boolean).join(" · ")}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    {request.eventDate && (
-                      <p className="font-mono text-xs text-accent-bright">
-                        Wants: {formatEventDate(request.eventDate)}
-                      </p>
-                    )}
-                    <p className="font-mono text-xs text-ink-faint">{formatDateTime(request.createdAt)}</p>
-                  </div>
-                </div>
-
-                <p className="mt-3 whitespace-pre-line text-sm text-ink-muted">{request.message}</p>
-
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  {request.status === "NEW" && (
-                    <form action={markBookingRequestContactedAction.bind(null, request.id)}>
-                      <button
-                        type="submit"
-                        className="rounded-full bg-accent px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-white transition-opacity hover:opacity-90 active:opacity-80"
-                      >
-                        Mark Contacted
-                      </button>
-                    </form>
-                  )}
-                  {request.status === "CONTACTED" && (
-                    <span className="font-mono text-xs uppercase tracking-[0.1em] text-mint">Contacted</span>
-                  )}
-                  <form action={closeBookingRequestAction.bind(null, request.id)}>
-                    <button
-                      type="submit"
-                      className="rounded-full border border-line-strong px-5 py-2 font-mono text-xs uppercase tracking-[0.15em] text-ink-muted transition-colors hover:border-magenta hover:text-magenta"
-                    >
-                      Close
-                    </button>
-                  </form>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {closedBookingRequests.length > 0 && (
-          <details>
-            <summary className="cursor-pointer font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
-              Closed booking requests ({closedBookingRequests.length})
-            </summary>
-            <div className="mt-3 flex flex-col gap-2">
-              {closedBookingRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 text-sm"
-                >
-                  <span className="text-ink">{request.customerName}</span>
-                  <span className="font-mono text-xs text-ink-faint">{formatDateTime(request.createdAt)}</span>
-                </div>
-              ))}
-            </div>
-          </details>
-        )}
-      </section>
 
       <details className="mb-8">
         <summary className="cursor-pointer font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">

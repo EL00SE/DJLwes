@@ -15,3 +15,21 @@ export const aboutContent = {
   // Null hides the embed entirely rather than showing a broken iframe.
   soundcloudEmbedUrl: null as string | null,
 };
+
+/** Private-booking contact details — shown as plain WhatsApp/email/
+ * Instagram links on the homepage's "Book DJ Lwes" section (no form, no
+ * database — just links out to however the business actually wants to
+ * be reached). Any of the three can be null to hide that link entirely.
+ * Swap in the real business number/address/handle whenever they're
+ * ready — same "edit here directly" reasoning as aboutContent above. */
+export const bookingContact = {
+  // E.164 format (country code, no spaces/dashes/leading +) — what
+  // wa.me links require, e.g. "972501234567" for an Israeli number.
+  whatsappNumber: null as string | null,
+  email: null as string | null,
+  // Handle only, no "@" and no URL — e.g. "djlwes" for a business
+  // Instagram account (can be the same as, or different from,
+  // aboutContent.socials' Instagram, since that one's about following
+  // the music rather than booking the DJ).
+  instagramHandle: null as string | null,
+};

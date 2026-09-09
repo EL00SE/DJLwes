@@ -5,14 +5,23 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { siteConfig } from "@/lib/site-config";
+import { bookingContact } from "@/lib/site-content";
 import { deferOnce } from "@/lib/defer";
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { href: "/", label: "Next Event" },
   { href: "/#about", label: "About" },
   { href: "/past-events", label: "Past Events" },
-  { href: "/#booking", label: "Book Us" },
 ];
+
+// The "Book Us" link only makes sense once there's actually a WhatsApp
+// number, email, or Instagram handle set — otherwise it points at a
+// section that renders nothing (see booking-section.tsx). Swap in the
+// real contact details in site-content.ts and this appears on its own.
+const NAV_LINKS =
+  bookingContact.whatsappNumber || bookingContact.email || bookingContact.instagramHandle
+    ? [...BASE_NAV_LINKS, { href: "/#booking", label: "Book Us" }]
+    : BASE_NAV_LINKS;
 
 export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
