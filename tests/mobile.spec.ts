@@ -80,35 +80,40 @@ test.describe("public pages", () => {
     expect(box!.height).toBeCloseTo(viewport!.height, 0);
   });
 
-  test("About link scrolls to the About section when navigating from a different page", async ({
-    page,
-  }) => {
-    // Regression check for a real bug: clicking "About" while already on
-    // "/" worked fine (the target is already on the page), but clicking
-    // it from a different page navigated to "/#about" without ever
-    // actually scrolling there — the About section hadn't streamed into
-    // the DOM yet by the time Next's own scroll-to-hash gave up, and it
-    // never retries. See hash-scroll-fix.tsx.
-    await page.goto("/past-events");
-    const hamburger = page.getByRole("button", { name: "Open menu" });
-    if (await hamburger.isVisible()) {
-      await hamburger.click({ force: true });
-    }
-    await page.getByRole("link", { name: "About", exact: true }).click();
+  // Regression check for a real bug: clicking a hash-anchor nav link
+  // while already on "/" worked fine (the target is already on the
+  // page), but clicking it from a different page navigated to e.g.
+  // "/#about" without ever actually scrolling there — the target section
+  // hadn't streamed into the DOM yet by the time Next's own
+  // scroll-to-hash gave up, and it never retries. See hash-scroll-fix.tsx.
+  for (const { label, id } of [
+    { label: "About", id: "about" },
+    { label: "Book Us", id: "booking" },
+  ]) {
+    test(`${label} link scrolls to its section when navigating from a different page`, async ({
+      page,
+    }) => {
+      await page.goto("/past-events");
+      const hamburger = page.getByRole("button", { name: "Open menu" });
+      if (await hamburger.isVisible()) {
+        await hamburger.click({ force: true });
+      }
+      await page.getByRole("link", { name: label, exact: true }).click();
 
-    await expect
-      .poll(
-        async () =>
-          page.evaluate(() => {
-            const el = document.getElementById("about");
-            if (!el) return false;
-            const r = el.getBoundingClientRect();
-            return r.top < window.innerHeight && r.bottom > 0;
-          }),
-        { timeout: 3000 }
-      )
-      .toBe(true);
-  });
+      await expect
+        .poll(
+          async () =>
+            page.evaluate((elementId) => {
+              const el = document.getElementById(elementId);
+              if (!el) return false;
+              const r = el.getBoundingClientRect();
+              return r.top < window.innerHeight && r.bottom > 0;
+            }, id),
+          { timeout: 3000 }
+        )
+        .toBe(true);
+    });
+  }
 
   test("mobile menu has no Admin Dashboard link when signed out", async ({ page }) => {
     await page.goto("/");

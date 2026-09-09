@@ -13,6 +13,7 @@ import {
   isValidSessionToken,
   verifyAdminPassword,
 } from "@/lib/admin-auth";
+import { getClientIp } from "@/lib/request-ip";
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
@@ -24,16 +25,6 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 // people share an IP" case to stay generous for here.
 const LOGIN_RATE_LIMIT_MAX = 5;
 const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-
-function getClientIp(headersList: Headers): string | null {
-  // Vercel sets this to "client, proxy1, proxy2..." — the first entry is
-  // the original requester. Not set for local `curl`/dev traffic with no
-  // proxy in front, in which case rate limiting simply doesn't apply —
-  // acceptable here the same way it is for the notify-signup route,
-  // since Vercel reliably sets it in production, which is what matters.
-  const forwardedFor = headersList.get("x-forwarded-for");
-  return forwardedFor?.split(",")[0]?.trim() || null;
-}
 
 /** Redirects to /admin/login unless the session cookie is valid. Exported
  * so admin/page.tsx can reuse the exact same check instead of keeping its

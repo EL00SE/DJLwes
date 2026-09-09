@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: "/", label: "Next Event" },
   { href: "/#about", label: "About" },
   { href: "/past-events", label: "Past Events" },
+  { href: "/#booking", label: "Book Us" },
 ];
 
 export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {

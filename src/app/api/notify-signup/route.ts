@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getClientIp } from "@/lib/request-ip";
 
 const schema = z.object({
   email: z.string().trim().email("A valid email is required"),
@@ -18,13 +19,6 @@ const schema = z.object({
 // end up blocking genuine signups instead of bots.
 const RATE_LIMIT_MAX = 30;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
-
-function getClientIp(request: Request): string | null {
-  // Vercel sets this to "client, proxy1, proxy2..." — the first entry is
-  // the original requester.
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  return forwardedFor?.split(",")[0]?.trim() || null;
-}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -48,7 +42,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const ipAddress = getClientIp(request);
+  const ipAddress = getClientIp(request.headers);
 
   if (ipAddress) {
     const recentCount = await prisma.notifySignup.count({

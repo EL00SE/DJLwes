@@ -2,16 +2,8 @@ import { sendEmail } from "@/lib/resend";
 import { sendWhatsAppTicketConfirmation } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/format";
 import { siteConfig } from "@/lib/site-config";
+import { escapeHtml } from "@/lib/html";
 import type { OrderWithDetails } from "@/lib/orders";
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function ticketSummary(order: OrderWithDetails): string {
   return order.items.map((item) => `${item.quantity} × ${item.ticketType.name}`).join(", ");

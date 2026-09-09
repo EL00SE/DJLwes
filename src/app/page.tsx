@@ -14,6 +14,7 @@ import { TicketTiersInfo } from "@/components/ticket-tiers-info";
 import { EntryRequirementsSection } from "@/components/entry-requirements-section";
 import { HomepageGalleryTeaser } from "@/components/homepage-gallery-teaser";
 import { AboutSection } from "@/components/about-section";
+import { BookingSection } from "@/components/booking-section";
 import { NotifySignupForm } from "@/components/notify-signup-form";
 import { siteConfig } from "@/lib/site-config";
 import { buildSocialMetadata } from "@/lib/metadata";
@@ -69,6 +70,7 @@ export default async function HomePage() {
         </div>
 
         <AboutSection bio={aboutContent.bio} photos={aboutContent.photos} />
+        <BookingSection />
       </div>
     );
   }
@@ -98,6 +100,7 @@ export default async function HomePage() {
         />
       )}
       <AboutSection bio={aboutContent.bio} photos={aboutContent.photos} />
+      <BookingSection />
     </div>
   );
 }

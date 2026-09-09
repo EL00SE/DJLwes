@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Spinner } from "@/components/spinner";
+import { HoneypotField } from "@/components/honeypot-field";
 
 export function NotifySignupForm() {
   const [email, setEmail] = useState("");
@@ -44,23 +45,7 @@ export function NotifySignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-2 sm:flex-row">
-      {/* Honeypot field: positioned off-screen (not display:none, which
-          some bots specifically know to skip) and hidden from assistive
-          tech and tab order, so it's invisible to every real visitor —
-          sighted, screen-reader, or keyboard — but still present for a
-          bot that fills in every field it finds. */}
-      <div className="absolute left-[-9999px]" aria-hidden="true">
-        <label htmlFor="notify-company">Company</label>
-        <input
-          id="notify-company"
-          type="text"
-          name="company"
-          tabIndex={-1}
-          autoComplete="off"
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-        />
-      </div>
+      <HoneypotField id="notify-company" value={company} onChange={setCompany} />
 
       <label htmlFor="notify-email" className="sr-only">
         Email address
