@@ -89,6 +89,24 @@ select {
   }
 }
 
+/* Slow glow pulse on the hero's Buy Tickets button — the one thing on the
+ * page that should catch the eye first. Motion-gated like everything else. */
+@keyframes buy-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 40px -8px var(--color-accent);
+  }
+  50% {
+    box-shadow: 0 0 64px -2px var(--color-accent);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .buy-pulse {
+    animation: buy-pulse 2.4s ease-in-out infinite;
+  }
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-ink);

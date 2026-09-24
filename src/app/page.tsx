@@ -14,6 +14,7 @@ import { TicketTiersInfo } from "@/components/ticket-tiers-info";
 import { EntryRequirementsSection } from "@/components/entry-requirements-section";
 import { HomepageGalleryTeaser } from "@/components/homepage-gallery-teaser";
 import { AboutSection } from "@/components/about-section";
+import { InstagramPosts } from "@/components/instagram-posts";
 import { BookingSection } from "@/components/booking-section";
 import { NotifySignupForm } from "@/components/notify-signup-form";
 import { siteConfig } from "@/lib/site-config";
@@ -88,7 +89,10 @@ export default async function HomePage() {
         location={event.location}
         coverImage={event.coverImage}
         coverImageFocalPoint={event.coverImageFocalPoint}
+        buyLink={event.buyLink}
+        disclaimer={event.buyDisclaimer}
       />
+      <InstagramPosts posts={aboutContent.instagramPosts} />
       <LineupSection lineup={event.lineup} />
       <TicketTiersInfo ticketTypes={event.ticketTypes} />
       <EntryRequirementsSection entryRequirements={event.entryRequirements} />

@@ -3,6 +3,7 @@ import { formatEventDate, formatEventTime } from "@/lib/format";
 import { siteConfig } from "@/lib/site-config";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { FitText } from "@/components/fit-text";
+import { BuyTicketsButton } from "@/components/buy-tickets-section";
 
 export function EventHero({
   title,
@@ -11,6 +12,8 @@ export function EventHero({
   location,
   coverImage,
   coverImageFocalPoint,
+  buyLink,
+  disclaimer,
 }: {
   title: string;
   description: string;
@@ -18,6 +21,8 @@ export function EventHero({
   location: string;
   coverImage: string;
   coverImageFocalPoint: string;
+  buyLink: string | null;
+  disclaimer: string | null;
 }) {
   return (
     <section className="relative overflow-hidden border-b border-line">
@@ -37,6 +42,21 @@ export function EventHero({
           <p className="mt-5 max-w-prose text-base leading-relaxed text-ink-muted sm:text-lg">
             {description}
           </p>
+
+          {/* Front and center on arrival — the same link as the Buy
+              Tickets section further down, just impossible to miss. */}
+          <div className="mt-7 flex flex-col gap-2">
+            <BuyTicketsButton
+              buyLink={buyLink}
+              className={`w-full sm:w-auto sm:self-start ${buyLink ? "buy-pulse" : ""}`}
+            />
+            {buyLink && (
+              <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
+                Secure checkout via Grow — opens in a new tab
+              </p>
+            )}
+            {disclaimer && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}
+          </div>
 
           <dl className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className="card-edge rounded-2xl px-5 py-4">

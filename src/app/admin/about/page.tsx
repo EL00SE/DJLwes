@@ -18,9 +18,14 @@ export default async function AdminAboutPage() {
       <h1 className="mt-1 mb-2 font-display text-4xl tracking-wide text-ink">About Us</h1>
       <p className="mb-8 text-sm text-ink-muted">
         Controls the homepage&apos;s About section — the bio and photos shown alongside the current
-        event, and on the &quot;no event on sale&quot; state.
+        event, and on the &quot;no event on sale&quot; state — plus the Instagram posts shown under
+        the current event.
       </p>
-      <AboutContentForm initial={{ bio: content.bio, photos: content.photos }} />
+      <AboutContentForm initial={{
+          bio: content.bio,
+          photos: content.photos,
+          instagramPosts: content.instagramPosts,
+        }} />
     </div>
   );
 }

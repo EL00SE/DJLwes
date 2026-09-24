@@ -250,6 +250,11 @@ model AboutContent {
   /// Blob URLs, admin-uploaded — shown as a small photo grid next to the
   /// bio. Empty hides the photo grid entirely (bio still shows).
   photos    String[] @default([])
+  /// Canonical instagram.com post/reel URLs (see lib/instagram.ts), shown
+  /// as embedded posts under the current event on the homepage. Pasted
+  /// by the admin — no Instagram API access needed. Empty hides the
+  /// section entirely.
+  instagramPosts String[] @default([])
   updatedAt DateTime @updatedAt
 }
 

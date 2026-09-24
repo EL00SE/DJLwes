@@ -147,6 +147,9 @@ test.describe("admin pages (signed in)", () => {
 
   test("about page's photo remove button is reachable without hover", async ({ page }) => {
     await page.goto("/admin/about");
+    // The page streams in behind a loading state — count() doesn't wait,
+    // so without this a slow render looked like "no photos" and skipped.
+    await expect(page.getByLabel("Bio / business description")).toBeVisible();
     const removeButtons = page.getByRole("button", { name: "Remove photo" });
     const count = await removeButtons.count();
     if (count === 0) test.skip(true, "No photos currently set on /admin/about to check.");

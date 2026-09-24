@@ -9,13 +9,15 @@ import { Spinner } from "@/components/spinner";
 export function AboutContentForm({
   initial,
 }: {
-  initial: { bio: string; photos: string[] };
+  initial: { bio: string; photos: string[]; instagramPosts: string[] };
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [bio, setBio] = useState(initial.bio);
   const [photos, setPhotos] = useState(initial.photos);
+  // One link per line — split back into an array on save.
+  const [instagramPosts, setInstagramPosts] = useState(initial.instagramPosts.join("\n"));
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,14 @@ export function AboutContentForm({
       const res = await fetch("/api/admin/about", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bio, photos }),
+        body: JSON.stringify({
+          bio,
+          photos,
+          instagramPosts: instagramPosts
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -131,6 +140,24 @@ export function AboutContentForm({
           Shown as a small photo grid next to the bio. Leave empty to hide the grid entirely.
         </span>
       </div>
+
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+          Instagram posts
+        </span>
+        <textarea
+          rows={5}
+          value={instagramPosts}
+          onChange={(e) => setInstagramPosts(e.target.value)}
+          placeholder={"https://www.instagram.com/p/AbC123xyz/\nhttps://www.instagram.com/reel/DeF456uvw/"}
+          className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 font-mono text-xs text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
+        />
+        <span className="text-xs text-ink-faint">
+          One post or reel link per line (up to 9) — on Instagram, open the post, tap ⋯ and choose
+          &quot;Copy link&quot;. They&apos;re shown under the current event on the homepage. Leave
+          empty to hide the section.
+        </span>
+      </label>
 
       {error && (
         <p role="alert" className="text-sm text-magenta">
