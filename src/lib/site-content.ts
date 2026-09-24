@@ -6,7 +6,7 @@ export const aboutContent = {
   photo: "/images/about-portrait.svg",
   bio: "DJ Lwes has spent the last few years building Etfe El Boiler from a one-room warehouse night into Haifa's home for deep, hypnotic house — low lights, loud subs, no phones on the floor. Every set is a slow build: no big drops, no filler, just a room that locks in together for six hours straight.",
   socials: [
-    { label: "Instagram", href: "https://instagram.com/djlwes" },
+    { label: "Instagram", href: "https://instagram.com/etfealboiler" },
     { label: "SoundCloud", href: "https://soundcloud.com/djlwes" },
   ],
   // A SoundCloud "widget" embed URL (Share -> Embed on any SoundCloud
@@ -31,5 +31,5 @@ export const bookingContact = {
   // Instagram account (can be the same as, or different from,
   // aboutContent.socials' Instagram, since that one's about following
   // the music rather than booking the DJ).
-  instagramHandle: null as string | null,
+  instagramHandle: "etfealboiler" as string | null,
 };
