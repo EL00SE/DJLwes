@@ -275,6 +275,20 @@ model NotifySignup {
   @@index([ipAddress, createdAt])
 }
 
+/// Singleton (id "instagram") holding the current Instagram API access
+/// token. Instagram's long-lived tokens expire after 60 days unless
+/// refreshed, and a Vercel env var can't be updated at runtime — so the
+/// weekly cron (api/cron/refresh-instagram-token) keeps the live token
+/// here instead. INSTAGRAM_ACCESS_TOKEN seeds it; `bootstrapToken` is the
+/// env value that seeded it, so pasting a brand-new token into the env
+/// var later is noticed and takes over. See lib/instagram-feed.ts.
+model InstagramToken {
+  id             String   @id @default("instagram")
+  token          String
+  bootstrapToken String
+  refreshedAt    DateTime
+}
+
 /// One failed /admin/login attempt, kept only long enough to rate-limit
 /// further guesses from the same source — see loginAdminAction. A
 /// successful login never creates a row here (and clears any existing

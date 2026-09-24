@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { aboutContent } from "@/lib/site-content";
+import { InstagramFrame } from "@/components/instagram-frame";
 
 const EMBED_SCRIPT_SRC = "https://www.instagram.com/embed.js";
 
@@ -67,38 +67,13 @@ export function InstagramPosts({ posts }: { posts: string[] }) {
 
   if (posts.length === 0) return null;
 
-  const instagram = aboutContent.socials.find((s) => s.label === "Instagram");
-
   return (
-    <section aria-label="Latest from Instagram" className="border-b border-line">
-      <div className="mx-auto max-w-6xl px-5 py-12 sm:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-bright">
-              On Instagram
-            </p>
-            <h2 className="mt-1 font-display text-3xl tracking-wide text-ink sm:text-4xl">
-              Latest from the feed
-            </h2>
-          </div>
-          {instagram && (
-            <a
-              href={instagram.href}
-              target="_blank"
-              rel="noreferrer"
-              className="font-mono text-xs uppercase tracking-[0.15em] text-accent-bright hover:underline"
-            >
-              Follow on Instagram →<span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          )}
-        </div>
-
-        <div
-          ref={containerRef}
-          dangerouslySetInnerHTML={{ __html: html }}
-          className="mt-6 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-4"
-        />
-      </div>
-    </section>
+    <InstagramFrame>
+      <div
+        ref={containerRef}
+        dangerouslySetInnerHTML={{ __html: html }}
+        className="mt-6 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-4"
+      />
+    </InstagramFrame>
   );
 }

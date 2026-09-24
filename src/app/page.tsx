@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { getActiveEvent, getMostRecentPastEventWithGallery } from "@/lib/data";
 import { getAboutContent } from "@/lib/about-content";
@@ -14,7 +15,7 @@ import { TicketTiersInfo } from "@/components/ticket-tiers-info";
 import { EntryRequirementsSection } from "@/components/entry-requirements-section";
 import { HomepageGalleryTeaser } from "@/components/homepage-gallery-teaser";
 import { AboutSection } from "@/components/about-section";
-import { InstagramPosts } from "@/components/instagram-posts";
+import { InstagramSection } from "@/components/instagram-section";
 import { BookingSection } from "@/components/booking-section";
 import { NotifySignupForm } from "@/components/notify-signup-form";
 import { siteConfig } from "@/lib/site-config";
@@ -92,7 +93,11 @@ export default async function HomePage() {
         buyLink={event.buyLink}
         disclaimer={event.buyDisclaimer}
       />
-      <InstagramPosts posts={aboutContent.instagramPosts} />
+      {/* Streams in on its own — a slow Instagram response never holds
+          up the event details above or anything below. */}
+      <Suspense fallback={null}>
+        <InstagramSection />
+      </Suspense>
       <LineupSection lineup={event.lineup} />
       <TicketTiersInfo ticketTypes={event.ticketTypes} />
       <EntryRequirementsSection entryRequirements={event.entryRequirements} />

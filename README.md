@@ -77,6 +77,7 @@ Fill in `.env`:
 | `BLOB_READ_WRITE_TOKEN` | See [Vercel Blob setup](#vercel-blob-setup) below — cover-image upload won't work without it |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` for local dev |
 | `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` / `PAYPAL_ENV` / `PAYPAL_WEBHOOK_ID` | Only needed to exercise the dormant PayPal flow — see [`paypal-showcase`](https://github.com/EL00SE/DJLwes/tree/paypal-showcase)'s README |
+| `INSTAGRAM_ACCESS_TOKEN` / `CRON_SECRET` | Optional — turns on the homepage's live Instagram feed. See [Instagram feed setup](#instagram-feed-setup) |
 | `RESEND_API_KEY`, `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` | Same — only needed for the dormant flows' order-confirmation delivery |
 
 **Local Postgres via Docker** (optional — skip if using a hosted database):
@@ -109,6 +110,19 @@ Visit [http://localhost:3000](http://localhost:3000). Log into `/admin`, go to *
 1. In your [Vercel dashboard](https://vercel.com/dashboard), open (or create) the project, go to **Storage → Create Database → Blob**, and give it a name.
 2. Connect it to this project — Vercel auto-injects a `BLOB_READ_WRITE_TOKEN` (and `BLOB_STORE_ID`/`BLOB_WEBHOOK_PUBLIC_KEY`) into the connected project's Production/Preview environment variables automatically, via OIDC — no manual copying needed for deployments on Vercel itself.
 3. For **local dev**, that OIDC handshake doesn't apply (your laptop isn't a Vercel deployment) — open the store's page, use its "`.env.local`" quickstart tab to get a `BLOB_READ_WRITE_TOKEN` value, and paste it into your local `.env`.
+
+### Instagram feed setup
+
+The homepage can show a random selection of the account's recent posts, straight from Instagram's official API, with no upkeep. Without this it falls back to whatever post links are pasted into `/admin/about`, or hides the section if there are none.
+
+1. **Make the account Professional.** In the Instagram app: Settings → Account type and tools → Switch to professional account (Creator or Business — both work, both free). Personal accounts can't use the API.
+2. **Create a Meta app.** At [developers.facebook.com](https://developers.facebook.com) → My Apps → Create App (Business type), then add the **Instagram** product and open **API setup with Instagram login**.
+3. **Generate a token.** In that panel, add the Instagram account and generate an access token with the `instagram_business_basic` permission (a 60-day token). While the app is in Development mode, the Instagram account must first be added as an Instagram tester (App roles → Roles) and the invite accepted in the Instagram app. Meta rearranges these screens fairly often, so follow the labels rather than this exact path.
+4. **Add two environment variables in Vercel** (Settings → Environment Variables), then redeploy:
+   - `INSTAGRAM_ACCESS_TOKEN` — the token from step 3.
+   - `CRON_SECRET` — any long random string (a password manager can generate one). Vercel sends it to the weekly refresh job in [`vercel.json`](vercel.json), and the job refuses to run without it.
+
+The token lasts 60 days but the weekly cron (`/api/cron/refresh-instagram-token`) renews it automatically, keeping the renewed copy in the database (the `InstagramToken` table), since an environment variable can't be edited from code. If it ever does lapse — the site quietly falls back to the pasted links — generate a fresh token and paste it into `INSTAGRAM_ACCESS_TOKEN`; the new value takes over on its own.
 
 ## Admin panel
 
