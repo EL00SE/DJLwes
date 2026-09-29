@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { formatEventDate, formatEventTime } from "@/lib/format";
+import { formatEventDate, formatEventTime, parseLines } from "@/lib/format";
 import { siteConfig } from "@/lib/site-config";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { FitText } from "@/components/fit-text";
@@ -14,6 +14,7 @@ export function EventHero({
   coverImageFocalPoint,
   buyLink,
   disclaimer,
+  entryRequirements,
 }: {
   title: string;
   description: string;
@@ -23,7 +24,9 @@ export function EventHero({
   coverImageFocalPoint: string;
   buyLink: string | null;
   disclaimer: string | null;
+  entryRequirements: string | null;
 }) {
+  const rules = parseLines(entryRequirements);
   return (
     <section className="relative overflow-hidden border-b border-line">
       <div className="glow-field" />
@@ -76,6 +79,22 @@ export function EventHero({
               <dd className="mt-1 text-sm font-medium text-ink">{location}</dd>
             </div>
           </dl>
+
+          {rules.length > 0 && (
+            <div className="card-edge mt-4 rounded-2xl border border-line-strong px-5 py-4">
+              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-accent-bright">
+                Entry requirements
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {rules.map((rule) => (
+                  <li key={rule} className="flex items-start gap-2 text-sm text-ink-muted">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent-bright" />
+                    {rule}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="mt-8">
             <CountdownTimer date={date} />

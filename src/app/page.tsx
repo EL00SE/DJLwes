@@ -12,7 +12,6 @@ import { EventHero } from "@/components/event-hero";
 import { BuyTicketsSection } from "@/components/buy-tickets-section";
 import { LineupSection } from "@/components/lineup-section";
 import { TicketTiersInfo } from "@/components/ticket-tiers-info";
-import { EntryRequirementsSection } from "@/components/entry-requirements-section";
 import { HomepageGalleryTeaser } from "@/components/homepage-gallery-teaser";
 import { AboutSection } from "@/components/about-section";
 import { InstagramSection } from "@/components/instagram-section";
@@ -92,6 +91,7 @@ export default async function HomePage() {
         coverImageFocalPoint={event.coverImageFocalPoint}
         buyLink={event.buyLink}
         disclaimer={event.buyDisclaimer}
+        entryRequirements={event.entryRequirements}
       />
       {/* Streams in on its own — a slow Instagram response never holds
           up the event details above or anything below. */}
@@ -100,7 +100,6 @@ export default async function HomePage() {
       </Suspense>
       <LineupSection lineup={event.lineup} />
       <TicketTiersInfo ticketTypes={event.ticketTypes} />
-      <EntryRequirementsSection entryRequirements={event.entryRequirements} />
       <BuyTicketsSection buyLink={event.buyLink} disclaimer={event.buyDisclaimer} />
       {pastEventWithGallery && (
         <HomepageGalleryTeaser
