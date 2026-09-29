@@ -7,9 +7,10 @@ import Image from "next/image";
 // missing entirely (most mobile browsers hand volume to the phone's own
 // hardware buttons, with no on-screen slider at all) — not discoverable
 // enough for something that starts playing the moment you tap it. This
-// starts quieter than full blast and gives an always-visible slider
-// instead of leaving it to native controls' own inconsistent UI.
-const DEFAULT_VOLUME = 0.5;
+// starts quiet (turned down further after 0.5 still read as loud) and
+// gives an always-visible slider instead of leaving it to native
+// controls' own inconsistent UI.
+const DEFAULT_VOLUME = 0.25;
 
 /** A video post's grid tile: starts as a plain poster image with a play
  * button (cheap — no video byte downloaded until asked for), and on
