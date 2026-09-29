@@ -142,7 +142,7 @@ test.describe("public pages", () => {
     // Long enough to outlast every retry in hash-scroll-fix.tsx's own
     // delay schedule, so this only passes if the fix's later re-asserts
     // actually did their job, not just the immediate one.
-    await page.waitForTimeout(4500);
+    await page.waitForTimeout(6500);
 
     const aboutTop = await page.evaluate(() => document.getElementById("about")?.getBoundingClientRect().top);
     expect(aboutTop).not.toBeUndefined();
