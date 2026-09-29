@@ -8,10 +8,15 @@ import { InstagramVideoTile } from "@/components/instagram-video-tile";
 const TILE_CLASSNAME =
   "relative aspect-square w-[72vw] max-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl border border-line-strong bg-bg-raised shadow-[0_0_40px_-16px_rgba(177,59,255,0.5)] sm:w-auto sm:max-w-none sm:shrink";
 
-/** A grid of the account's recent posts. Photos link out to the post on
- * Instagram; videos play right on the page via InstagramVideoTile
- * instead, since the API hands over the real video file — no reason to
- * only offer a link-out when we can actually play it here.
+/** A grid of the account's recent posts. Nothing here links out to
+ * Instagram — the only way off this section is the "Follow on Instagram"
+ * link up in InstagramFrame's own header, next to the profile. Photos are
+ * just a plain display; videos play right on the page via
+ * InstagramVideoTile, since the API hands over the real video file —
+ * there's no Instagram redirect to route around because there's no
+ * Instagram iframe involved at all (unlike the pasted-link fallback,
+ * instagram-posts.tsx, which embeds Instagram's own widget and can't
+ * control its clicks — see that file's doc comment).
  *
  * Below `sm:`, this is a horizontal swipe — one post at a time, snapping
  * as you go, the same gesture as swiping through cards rather than a
@@ -34,7 +39,11 @@ export function InstagramFeed({ items }: { items: InstagramFeedItem[] }) {
           <li key={item.id} className={TILE_CLASSNAME}>
             {item.isVideo && item.videoUrl ? (
               <InstagramVideoTile videoUrl={item.videoUrl} posterUrl={item.imageUrl} alt={item.alt} />
-            ) : (
+            ) : item.isVideo ? (
+              // Only reachable if the API reports a video but somehow
+              // didn't hand back a playable file — this is the one tile
+              // that still links out, since there's nothing to actually
+              // show otherwise.
               <a
                 href={item.permalink}
                 target="_blank"
@@ -49,20 +58,23 @@ export function InstagramFeed({ items }: { items: InstagramFeedItem[] }) {
                   sizes="(min-width: 640px) 33vw, 72vw"
                   className="object-contain transition-transform duration-300 group-hover:scale-105"
                 />
-                {/* Only reachable if the API reports a video but somehow
-                    didn't hand back a playable file — falls back to the
-                    old link-out-with-a-badge behavior rather than
-                    breaking. */}
-                {item.isVideo && (
-                  <span
-                    aria-hidden
-                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-bg/70 text-xs text-ink"
-                  >
-                    ▶
-                  </span>
-                )}
+                <span
+                  aria-hidden
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-bg/70 text-xs text-ink"
+                >
+                  ▶
+                </span>
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
+            ) : (
+              <Image
+                src={item.imageUrl}
+                alt={item.alt}
+                fill
+                unoptimized
+                sizes="(min-width: 640px) 33vw, 72vw"
+                className="object-contain"
+              />
             )}
           </li>
         ))}
