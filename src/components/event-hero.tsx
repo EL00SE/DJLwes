@@ -45,7 +45,12 @@ export function EventHero({
               {title}
             </FitText>
           </h1>
-          <p className="mt-5 max-w-prose text-base leading-relaxed text-ink-muted sm:text-lg">
+          {/* whitespace-pre-line — the admin's own line breaks (Shift+Enter
+              in the /admin/events description field) are real \n
+              characters in the stored text; a plain <p> collapses them
+              into one line, running everything together regardless of
+              how it was actually entered. */}
+          <p className="mt-5 max-w-prose whitespace-pre-line text-base leading-relaxed text-ink-muted sm:text-lg">
             {description}
           </p>
 

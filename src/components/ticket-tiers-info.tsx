@@ -12,7 +12,7 @@ export function TicketTierInfoCard({ ticketType }: { ticketType: TicketTypeSumma
       <div>
         <p className="font-display text-2xl tracking-wide text-ink">{ticketType.name}</p>
         {ticketType.description && (
-          <p className="mt-1 text-sm text-ink-muted">{ticketType.description}</p>
+          <p className="mt-1 whitespace-pre-line text-sm text-ink-muted">{ticketType.description}</p>
         )}
         <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.15em] text-ink-faint">
           {soldOut ? "Sold out" : `${ticketType.quantityRemaining} remaining`}

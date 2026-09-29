@@ -16,7 +16,13 @@ export function AboutSection({ bio, photos }: { bio: string; photos: string[] })
         }`}
       >
         {photos.length === 1 ? (
-          <div className="relative mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl border border-line-strong shadow-[0_0_60px_-20px_rgba(177,59,255,0.5)]">
+          // aspect-square, not the taller aspect-[4/5] this used to be —
+          // the one photo actually in use right now is the site's own
+          // (square, 800x800) logo, and a portrait crop was cutting into
+          // it top and bottom. Square is also just the safer default for
+          // "one photo, could be anything" — a portrait crop is a much
+          // more specific bet on what gets uploaded here.
+          <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-3xl border border-line-strong shadow-[0_0_60px_-20px_rgba(177,59,255,0.5)]">
             <Image
               src={photos[0]}
               alt={siteConfig.djName}
@@ -58,14 +64,21 @@ export function AboutSection({ bio, photos }: { bio: string; photos: string[] })
           id="about"
           className={`scroll-mt-[18vh] ${photos.length === 0 ? "mx-auto max-w-2xl text-center" : ""}`}
         >
+          {/* Deliberately hardcoded, not siteConfig.djName ("DJ Lwes") —
+              same "Etfe Al Boiler" spelling used in the header wordmark
+              and hero, used here as its own thing too. */}
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-bright">
-            About {siteConfig.djName}
+            About Etfe Al Boiler
           </p>
           <h2 className="mt-2 font-display text-4xl tracking-wide text-ink sm:text-5xl">
             The night behind {siteConfig.eventSeriesName}
           </h2>
+          {/* whitespace-pre-line — the admin's own line breaks (Shift+Enter
+              in the /admin/about textarea) are real \n characters in the
+              stored text; a plain <p> collapses them into one line, same
+              class of bug as the event description (see event-hero.tsx). */}
           <p
-            className={`mt-5 text-base leading-relaxed text-ink-muted ${
+            className={`mt-5 whitespace-pre-line text-base leading-relaxed text-ink-muted ${
               photos.length === 0 ? "mx-auto max-w-prose" : "max-w-prose"
             }`}
           >
