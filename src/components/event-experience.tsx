@@ -1,6 +1,6 @@
 "use client";
 
-// UNUSED — dormant since ticket checkout moved to a Grow-hosted link (see
+// UNUSED — dormant since ticket checkout moved to a Shmor-Makom-hosted link (see
 // BuyTicketsSection, which is what actually renders on the homepage now).
 // Nothing imports this component. Kept in case the in-app PayPal purchase
 // flow gets revived later; safe to ignore until then, not a bug.

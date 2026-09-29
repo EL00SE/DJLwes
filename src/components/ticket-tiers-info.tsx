@@ -3,7 +3,7 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import type { TicketTypeSummary } from "@/components/ticket-type-card";
 
 /** One ticket tier's read-only price/availability card — shared between
- * this (Grow-link flow) and the dormant guest-request-experience.tsx,
+ * this (Shmor-Makom-link flow) and the dormant guest-request-experience.tsx,
  * which shows the same info before its "Request to Join" panel. */
 export function TicketTierInfoCard({ ticketType }: { ticketType: TicketTypeSummary }) {
   const soldOut = ticketType.quantityRemaining <= 0;
@@ -23,7 +23,7 @@ export function TicketTierInfoCard({ ticketType }: { ticketType: TicketTypeSumma
   );
 }
 
-/** Read-only pricing info shown alongside the Buy Tickets button — Grow
+/** Read-only pricing info shown alongside the Buy Tickets button — Shmor Makom
  * owns the actual checkout/quantity, so this is purely informational
  * (and "remaining" here is whatever the admin last typed in, not a live
  * count — see the note in the admin event editor). */

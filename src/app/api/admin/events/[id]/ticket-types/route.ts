@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminRequest } from "@/lib/admin-auth";
-import { dollarsToCents, ticketTypeFormSchema } from "@/lib/ticket-types";
+import { shekelsToCents, ticketTypeFormSchema } from "@/lib/ticket-types";
 
 /** Adds a new ticket tier to an event. Starts fully in stock —
  * quantityRemaining === quantityTotal, since nothing's sold yet. */
@@ -37,7 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       eventId,
       name,
       description: description || null,
-      priceCents: dollarsToCents(price),
+      priceCents: shekelsToCents(price),
       quantityTotal,
       quantityRemaining: quantityTotal,
     },

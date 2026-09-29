@@ -3,7 +3,7 @@
 // This file itself is live (admin/page.tsx renders approve/decline
 // buttons wired to these actions), but its only intake form —
 // guest-request-panel.tsx — is currently unreachable from any live page
-// (ticket sales moved to a Grow-hosted link), so no new GuestRequest
+// (ticket sales moved to a Shmor-Makom-hosted link), so no new GuestRequest
 // rows are being created right now. Nothing to fix here; just don't be
 // surprised if the admin dashboard's request list stays empty.
 import { revalidatePath } from "next/cache";
@@ -26,8 +26,8 @@ async function claimPendingRequest(
 }
 
 /**
- * Approves a guest request. TODO once Grow's real API details are in
- * hand: create a Grow payment link for this request's headcount, send it
+ * Approves a guest request. TODO once Shmor Makom's real API details are in
+ * hand: create a Shmor Makom payment link for this request's headcount, send it
  * to customerPhone, and record growPaymentLinkUrl/growPaymentLinkSentAt.
  * For now this only flips the status — nothing is sent to the guest yet,
  * which is surfaced honestly in the admin UI (see admin/page.tsx).

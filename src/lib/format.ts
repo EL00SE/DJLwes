@@ -17,7 +17,12 @@ export function parseLines(text: string | null | undefined): string[] {
 export function formatPrice(cents: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    // Shekel — the site only serves events in Israel (see EVENT_TIME_ZONE
+    // above). "en-US" as the locale is deliberate even so: it's just what
+    // controls digit grouping/decimal punctuation, and en-US's is the one
+    // this already used for USD, so keeping it means only the currency
+    // itself (and its symbol, ₪) changes here, nothing else.
+    currency: "ILS",
     minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
   }).format(cents / 100);
 }

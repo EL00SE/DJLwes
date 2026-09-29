@@ -1,6 +1,6 @@
 // UNUSED — this is PayPal's return_url from the in-app checkout flow
 // (api/checkout, api/webhooks/paypal), which nothing links to anymore
-// since ticket sales moved to a Grow-hosted link. No live page can ever
+// since ticket sales moved to a Shmor-Makom-hosted link. No live page can ever
 // redirect a buyer here. Dormant, not a bug — kept in case that flow
 // gets revived.
 import Link from "next/link";

@@ -29,7 +29,7 @@ export function BuyTicketsButton({
   );
 }
 
-// Ticket pricing, quantity, payment, and invoicing all live on Grow's
+// Ticket pricing, quantity, payment, and invoicing all live on Shmor Makom's
 // side now — this is deliberately just a link out to the checkout page
 // the admin sets per-event (see admin/events), not a form of our own.
 export function BuyTicketsSection({
@@ -43,7 +43,7 @@ export function BuyTicketsSection({
     <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-5 py-16 text-center sm:px-8">
       <BuyTicketsButton buyLink={buyLink} />
       <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-        Secure checkout via Grow — opens in a new tab
+        Secure checkout via Shmor Makom — opens in a new tab
       </p>
       {disclaimer && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}
     </div>

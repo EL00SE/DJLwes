@@ -86,7 +86,7 @@ export default async function AdminPage() {
         <div>
           <p className="font-display text-2xl tracking-wide text-ink">Events</p>
           <p className="mt-1 text-sm text-ink-muted">
-            Edit the current event&apos;s text and photo, set its Grow buy link, or add the next one.
+            Edit the current event&apos;s text and photo, set its Shmor Makom buy link, or add the next one.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -133,13 +133,13 @@ export default async function AdminPage() {
 
       <details className="mb-8">
         <summary className="cursor-pointer font-mono text-xs uppercase tracking-[0.25em] text-ink-faint">
-          Legacy: pre-Grow ticket workflows
+          Legacy: pre-Shmor-Makom ticket workflows
         </summary>
         <p className="mt-3 mb-6 text-sm text-ink-muted">
-          Tickets are sold through a single Grow checkout link now (set per-event above) — Grow
+          Tickets are sold through a single Shmor Makom checkout link now (set per-event above) — Shmor Makom
           handles pricing, payment, and invoicing, so there&apos;s nothing to approve here anymore.
           These two older workflows (instant-purchase PayPal orders, and the free-request-then-
-          approve flow built for an earlier Grow integration attempt) stay functional in case
+          approve flow built for an earlier Shmor Makom integration attempt) stay functional in case
           anything from before the switch still needs reviewing.
         </p>
 

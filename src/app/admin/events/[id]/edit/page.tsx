@@ -49,9 +49,9 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           Ticket tiers
         </h2>
         <p className="mb-4 text-sm text-ink-muted">
-          Informational only — actual payment happens on Grow, so &quot;remaining&quot; here isn&apos;t
+          Informational only — actual payment happens on Shmor Makom, so &quot;remaining&quot; here isn&apos;t
           decremented automatically by real sales. Update it by hand to keep it roughly in sync with
-          what Grow shows, or leave every tier&apos;s remaining count as-is if you&apos;d rather not
+          what Shmor Makom shows, or leave every tier&apos;s remaining count as-is if you&apos;d rather not
           bother with it.
         </p>
         <TicketTypesManager eventId={event.id} initial={event.ticketTypes} />

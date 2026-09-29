@@ -6,8 +6,8 @@ import { getAboutContent } from "@/lib/about-content";
 import { EventHero } from "@/components/event-hero";
 // Both the instant-PayPal-purchase flow (EventExperience) and the
 // free-request-then-approve flow (GuestRequestExperience) are kept in the
-// repo, unused — ticket buying is now a single link out to a Grow-hosted
-// checkout page (Grow owns pricing/quantity/invoicing from here), set per
+// repo, unused — ticket buying is now a single link out to a Shmor-Makom-hosted
+// checkout page (Shmor Makom owns pricing/quantity/invoicing from here), set per
 // event in /admin/events. See buy-tickets-section.tsx.
 import { BuyTicketsSection } from "@/components/buy-tickets-section";
 import { LineupSection } from "@/components/lineup-section";

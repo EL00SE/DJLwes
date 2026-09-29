@@ -1,12 +1,12 @@
 # Etfe El Boiler — DJ Lwes Ticketing
 
-A customer-facing event page for **DJ Lwes**' *Etfe El Boiler* parties: a live event page with a cover photo, description, and a single **Buy Tickets** button that hands off to a [Grow](https://grow.business) checkout page — Grow owns pricing, quantity, payment, and invoicing from there. The admin side is a small CMS for managing that event content (text, photo, and the Grow link) without touching code.
+A customer-facing event page for **DJ Lwes**' *Etfe El Boiler* parties: a live event page with a cover photo, description, and a single **Buy Tickets** button that hands off to a Shmor Makom checkout page, which owns pricing, quantity, payment, and invoicing from there. The admin side is a small CMS for managing that event content (text, photo, and the Shmor Makom link) without touching code.
 
 Dark, underground deep-house visual identity — neon violet glow, film grain, ticket-stub details — built to feel like a real party's site rather than a template.
 
 **Live demo:** [dj-lwes.vercel.app](https://dj-lwes.vercel.app)
 
-> **Heads up — this repo has two very different branches.** This one (`main`) hands off checkout to an external Grow-hosted payment page, per the client's actual business decision partway through the project. The [`paypal-showcase`](https://github.com/EL00SE/DJLwes/tree/paypal-showcase) branch is a frozen snapshot of how the site worked *before* that pivot — a full in-app PayPal checkout with signature-verified webhooks and race-safe inventory — kept alive as its own [live demo](https://dj-lwes-paypal-showcase.vercel.app) with its own isolated database, since it's the more technically demonstrative half of the project. See that branch's own README for details.
+> **Heads up — this repo has two very different branches.** This one (`main`) hands off checkout to an external Shmor-Makom-hosted payment page, per the client's actual business decision partway through the project. The [`paypal-showcase`](https://github.com/EL00SE/DJLwes/tree/paypal-showcase) branch is a frozen snapshot of how the site worked *before* that pivot — a full in-app PayPal checkout with signature-verified webhooks and race-safe inventory — kept alive as its own [live demo](https://dj-lwes-paypal-showcase.vercel.app) with its own isolated database, since it's the more technically demonstrative half of the project. See that branch's own README for details.
 
 ## Screenshots
 
@@ -14,13 +14,13 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 
 - Current event page (hero + Buy Tickets button)
 - Past events gallery
-- Admin event list, and the edit form (photo upload, Grow link, "make this live" toggle)
+- Admin event list, and the edit form (photo upload, Shmor Makom link, "make this live" toggle)
 
 ## Features
 
-- **Current event page** — title, description, date/time, location, cover image, and a **Buy Tickets** button linking straight to a Grow-hosted checkout page. Shows a disabled "Tickets coming soon" state until the admin sets a link.
+- **Current event page** — title, description, date/time, location, cover image, and a **Buy Tickets** button linking straight to a Shmor-Makom-hosted checkout page. Shows a disabled "Tickets coming soon" state until the admin sets a link.
 - **Past events gallery** — grid of photos/video per past event.
-- **Admin event editor** ([`/admin/events`](#admin-panel)) — list, create, and edit events: title, description, date/time (entered and displayed in Israel local time regardless of the server's own timezone — see [src/lib/format.ts](src/lib/format.ts)), location, cover image (uploaded directly to [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) from the browser), and the Grow buy link. A "make this the live event" toggle atomically demotes whichever event was previously active — see [src/lib/events.ts](src/lib/events.ts).
+- **Admin event editor** ([`/admin/events`](#admin-panel)) — list, create, and edit events: title, description, date/time (entered and displayed in Israel local time regardless of the server's own timezone — see [src/lib/format.ts](src/lib/format.ts)), location, cover image (uploaded directly to [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) from the browser), and the Shmor Makom buy link. A "make this the live event" toggle atomically demotes whichever event was previously active — see [src/lib/events.ts](src/lib/events.ts).
 - **Responsive down to 320px** — hamburger nav below `sm:`, no horizontal overflow anywhere in the range.
 
 ### Dormant flows, kept but unused
@@ -28,9 +28,9 @@ _Run `npm run dev`, visit `http://localhost:3000`, and drop screenshots into a `
 Two earlier checkout implementations are still fully functional in the codebase — not deleted, just not wired into the homepage:
 
 - **Instant-purchase PayPal checkout** (`EventExperience`/`BuyPanel`, `/api/checkout`, the signature-verified `/api/webhooks/paypal`, and admin approve/decline/refund) — this is the flow the [`paypal-showcase`](https://github.com/EL00SE/DJLwes/tree/paypal-showcase) branch runs live. See that branch's README for the full feature writeup.
-- **Free-request-then-approve flow** (`GuestRequestExperience`, the `GuestRequest` model) — an intermediate design built between the PayPal flow and the current Grow-link approach: a customer would submit a request (name, Instagram, phone, headcount) instead of paying, and an approved request was meant to trigger a Grow payment link via their API. That integration was never finished — the simpler "just link straight to a Grow checkout page the admin sets up manually" approach (what `main` does now) made it unnecessary.
+- **Free-request-then-approve flow** (`GuestRequestExperience`, the `GuestRequest` model) — an intermediate design built between the PayPal flow and the current Shmor-Makom-link approach: a customer would submit a request (name, Instagram, phone, headcount) instead of paying, and an approved request was meant to trigger a Shmor Makom payment link via their API. That integration was never finished — the simpler "just link straight to a Shmor Makom checkout page the admin sets up manually" approach (what `main` does now) made it unnecessary.
 
-Both show up, collapsed, under "Legacy: pre-Grow ticket workflows" in [`/admin`](#admin-panel).
+Both show up, collapsed, under "Legacy: pre-Shmor-Makom ticket workflows" in [`/admin`](#admin-panel).
 
 ## Tech stack
 
@@ -44,7 +44,7 @@ Both show up, collapsed, under "Legacy: pre-Grow ticket workflows" in [`/admin`]
 
 ## Data model
 
-`Event` → has many `TicketType`, `GalleryItem`, `Order`, and `GuestRequest`. The last three back the dormant flows above; the live Grow-link flow only uses `Event`'s own fields (including `buyLink`). See [prisma/schema.prisma](prisma/schema.prisma).
+`Event` → has many `TicketType`, `GalleryItem`, `Order`, and `GuestRequest`. The last three back the dormant flows above; the live Shmor-Makom-link flow only uses `Event`'s own fields (including `buyLink`). See [prisma/schema.prisma](prisma/schema.prisma).
 
 ## Setup
 
@@ -128,8 +128,8 @@ The token lasts 60 days but the weekly cron (`/api/cron/refresh-instagram-token`
 
 Visit `/admin` and log in with `ADMIN_PASSWORD` (session lasts 7 days, single shared password — no per-person accounts). You'll see:
 
-- **Events** — a card linking to [`/admin/events`](#admin-panel): list every event, create a new one, or edit an existing one's title, description, date/time, location, cover photo, and Grow buy link. Checking "make this the live event" atomically demotes whichever event was previously active.
-- **Legacy: pre-Grow ticket workflows** (collapsed by default) — the dormant PayPal order-approval queue and the dormant guest-request queue, kept functional in case anything from before the switch still needs reviewing. Nothing new should land here on a live site, since there's no in-app checkout to generate orders or requests anymore.
+- **Events** — a card linking to [`/admin/events`](#admin-panel): list every event, create a new one, or edit an existing one's title, description, date/time, location, cover photo, and Shmor Makom buy link. Checking "make this the live event" atomically demotes whichever event was previously active.
+- **Legacy: pre-Shmor-Makom ticket workflows** (collapsed by default) — the dormant PayPal order-approval queue and the dormant guest-request queue, kept functional in case anything from before the switch still needs reviewing. Nothing new should land here on a live site, since there's no in-app checkout to generate orders or requests anymore.
 
 ## Deployment (Vercel)
 
@@ -137,7 +137,7 @@ Visit `/admin` and log in with `ADMIN_PASSWORD` (session lasts 7 days, single sh
 2. Set up a [Vercel Blob store](#vercel-blob-setup) and connect it to the project.
 3. Add `DATABASE_URL` and `ADMIN_PASSWORD` (pick a real one) in the Vercel project's environment variables. `NEXT_PUBLIC_SITE_URL` doesn't need to be set — it auto-detects the deployment's own domain (see [src/lib/site-config.ts](src/lib/site-config.ts)).
 4. Run `npx prisma migrate deploy` against the production database once, then `npm run db:seed` for placeholder data (or just use `/admin/events` once deployed).
-5. Visit `/admin/events`, edit the live event, and paste in the real Grow checkout link.
+5. Visit `/admin/events`, edit the live event, and paste in the real Shmor Makom checkout link.
 
 ## Project structure
 
@@ -181,7 +181,7 @@ prisma/
 
 ## Planned features
 
-- **Real Grow API integration** — the buy link is currently pasted in by hand after the admin sets pricing/tickets up in Grow's own dashboard. A `GuestRequest`-style flow that calls Grow's API directly to generate a link was scoped out early on (see [Dormant flows](#dormant-flows-kept-but-unused) above) but abandoned once the simpler manual-link approach turned out to be enough for this client's actual needs.
+- **Real Shmor Makom API integration** — the buy link is currently pasted in by hand after the admin sets pricing/tickets up in Shmor Makom's own dashboard. A `GuestRequest`-style flow that calls Shmor Makom's API directly to generate a link was scoped out early on (see [Dormant flows](#dormant-flows-kept-but-unused) above) but abandoned once the simpler manual-link approach turned out to be enough for this client's actual needs.
 - Multiple simultaneous on-sale events (currently one "active" event at a time)
 - Gallery-item management in `/admin` (past-event photos/videos are still seed-only)
 

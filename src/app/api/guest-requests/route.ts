@@ -1,5 +1,5 @@
 // UNUSED — the POST target of guest-request-panel.tsx, which nothing
-// renders anymore (ticket sales moved to a Grow-hosted link). Still
+// renders anymore (ticket sales moved to a Shmor-Makom-hosted link). Still
 // deployed and technically callable directly, but no live page ever
 // submits to it, so no new GuestRequest rows are being created right
 // now. Dormant, not a bug.

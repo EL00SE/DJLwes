@@ -52,7 +52,7 @@ export function EventHero({
             />
             {buyLink && (
               <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-                Secure checkout via Grow — opens in a new tab
+                Secure checkout via Shmor Makom — opens in a new tab
               </p>
             )}
             {disclaimer && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}

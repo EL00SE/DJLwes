@@ -168,17 +168,17 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
 
       <label className="flex flex-col gap-1.5 text-sm">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
-          Buy link <span className="normal-case text-ink-faint">(Grow checkout page)</span>
+          Buy link <span className="normal-case text-ink-faint">(Shmor Makom checkout page)</span>
         </span>
         <input
           type="url"
           value={buyLink}
           onChange={(e) => setBuyLink(e.target.value)}
-          placeholder="https://pay.grow.link/..."
+          placeholder="https://..."
           className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
         <span className="text-xs text-ink-faint">
-          Leave blank while pricing/tickets aren&apos;t set up in Grow yet — the homepage shows a
+          Leave blank while pricing/tickets aren&apos;t set up in Shmor Makom yet — the homepage shows a
           disabled button until this is filled in.
         </span>
       </label>
@@ -212,7 +212,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
           className="rounded-xl border border-line bg-bg/60 px-4 py-2.5 text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent focus:ring-2 focus:ring-accent/40"
         />
         <span className="text-xs text-ink-faint">
-          Shown to buyers before they click through to Grow — door policies, ID rules, age limits,
+          Shown to buyers before they click through to Shmor Makom — door policies, ID rules, age limits,
           that kind of thing. Leave blank to hide the section entirely.
         </span>
       </label>

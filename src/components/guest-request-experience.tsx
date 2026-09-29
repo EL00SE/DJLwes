@@ -1,6 +1,6 @@
 "use client";
 
-// UNUSED — dormant since ticket checkout moved to a Grow-hosted link.
+// UNUSED — dormant since ticket checkout moved to a Shmor-Makom-hosted link.
 // Nothing imports this component, so no request submitted through it
 // could actually reach a live page. The admin approve/decline UI for
 // GuestRequest rows (admin/page.tsx, guest-request-actions.ts) is still

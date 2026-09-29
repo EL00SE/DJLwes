@@ -90,7 +90,7 @@ function TierEditForm({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
-            Price (USD)
+            Price (₪)
           </span>
           <input
             required

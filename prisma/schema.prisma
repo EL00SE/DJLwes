@@ -28,8 +28,8 @@ model Event {
   coverImageFocalPoint String  @default("50% 50%")
   isActive             Boolean @default(false)
 
-  /// External checkout link for this event (a Grow-hosted payment page —
-  /// Grow owns pricing/quantity/invoicing from here). Null until the admin
+  /// External checkout link for this event (a Shmor-Makom-hosted payment page —
+  /// Shmor Makom owns pricing/quantity/invoicing from here). Null until the admin
   /// sets one; the homepage shows a disabled "coming soon" button until then.
   buyLink String?
 
@@ -39,7 +39,7 @@ model Event {
 
   /// Freeform entry/door requirements, one per line (e.g. "Mixed groups
   /// only after 1am", "Valid ID required", "21+"). Shown to buyers before
-  /// they click through to Grow, since Grow's own checkout page doesn't
+  /// they click through to Shmor Makom, since its own checkout page doesn't
   /// carry this context. Null/empty hides the section entirely.
   entryRequirements String?
 
@@ -178,9 +178,9 @@ model WebhookLog {
 
 enum GuestRequestStatus {
   PENDING
-  /// Approved in /admin. A Grow payment link should have been generated
+  /// Approved in /admin. A Shmor Makom payment link should have been generated
   /// and sent — see growPaymentLinkUrl/growPaymentLinkSentAt. Payment
-  /// itself, and invoicing, happen entirely on Grow's side from here.
+  /// itself, and invoicing, happen entirely on Shmor Makom's side from here.
   APPROVED
   DECLINED
 }
@@ -188,8 +188,8 @@ enum GuestRequestStatus {
 /// The "guest list" request flow: a customer asks to attend (with a
 /// headcount broken down by gender, since door policy/pricing here
 /// depends on that) before any payment happens. The business owner vets
-/// and approves/declines in /admin; approving sends the guest a Grow
-/// payment link, and Grow handles collecting payment and issuing real
+/// and approves/declines in /admin; approving sends the guest a Shmor Makom
+/// payment link, and Shmor Makom handles collecting payment and issuing real
 /// invoices to both the guest and the business — this app never touches
 /// money for this flow the way it does for Order/PayPal.
 model GuestRequest {
@@ -198,7 +198,7 @@ model GuestRequest {
 
   customerName      String
   customerInstagram String
-  /// Required — this is what Grow uses to deliver the payment link.
+  /// Required — this is what Shmor Makom uses to deliver the payment link.
   customerPhone String
   customerEmail String?
 
@@ -208,7 +208,7 @@ model GuestRequest {
 
   status GuestRequestStatus @default(PENDING)
 
-  /// Set once a Grow payment link has actually been created + sent for
+  /// Set once a Shmor Makom payment link has actually been created + sent for
   /// this request (on approval). Null until that integration is wired up.
   growPaymentLinkUrl    String?
   growPaymentLinkSentAt DateTime?

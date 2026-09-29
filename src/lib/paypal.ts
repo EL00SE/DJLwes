@@ -5,7 +5,7 @@
 // to refund a declined order). createPayPalOrder, capturePayPalOrder,
 // findApproveLink, and verifyWebhookSignature are UNUSED — they only
 // serve the in-app checkout flow (api/checkout, api/webhooks/paypal),
-// which is dormant since ticket sales moved to a Grow-hosted link.
+// which is dormant since ticket sales moved to a Shmor-Makom-hosted link.
 const clientId = process.env.PAYPAL_CLIENT_ID;
 const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 // "sandbox" (default, for testing) or "live".

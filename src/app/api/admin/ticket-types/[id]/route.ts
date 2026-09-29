@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isAdminRequest } from "@/lib/admin-auth";
-import { dollarsToCents, ticketTypeFormSchema } from "@/lib/ticket-types";
+import { shekelsToCents, ticketTypeFormSchema } from "@/lib/ticket-types";
 
 /** Updates a ticket tier's name/description/price/quantity. Editing the
  * total preserves however many are already sold — e.g. raising a 20/20
@@ -47,7 +47,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     data: {
       name,
       description: description || null,
-      priceCents: dollarsToCents(price),
+      priceCents: shekelsToCents(price),
       quantityTotal,
       quantityRemaining: quantityTotal - sold,
     },

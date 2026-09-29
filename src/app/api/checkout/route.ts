@@ -1,5 +1,5 @@
 // UNUSED — the POST target of buy-panel.tsx, which nothing renders
-// anymore (ticket sales moved to a Grow-hosted link). Still deployed and
+// anymore (ticket sales moved to a Shmor-Makom-hosted link). Still deployed and
 // technically callable directly, but no live page ever submits to it.
 // Dormant, not a bug.
 import { NextResponse } from "next/server";

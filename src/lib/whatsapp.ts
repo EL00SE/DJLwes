@@ -26,7 +26,7 @@ export async function sendWhatsAppTicketConfirmation(params: {
   customerName: string;
   eventTitle: string;
   ticketSummary: string; // e.g. "2 x General Admission"
-  total: string; // pre-formatted, e.g. "$70"
+  total: string; // pre-formatted, e.g. "₪70"
 }) {
   if (!accessToken || !phoneNumberId) {
     throw new Error("WhatsApp is not configured (missing WHATSAPP_ACCESS_TOKEN/WHATSAPP_PHONE_NUMBER_ID)");
