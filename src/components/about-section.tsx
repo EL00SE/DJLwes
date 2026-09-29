@@ -11,8 +11,7 @@ export function AboutSection({ bio, photos }: { bio: string; photos: string[] })
   return (
     <ScrollReveal>
       <div
-        id="about"
-        className={`mx-auto grid max-w-6xl scroll-mt-24 gap-10 px-5 py-16 sm:px-8 ${
+        className={`mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 ${
           photos.length > 0 ? "lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-14" : ""
         }`}
       >
@@ -47,7 +46,18 @@ export function AboutSection({ bio, photos }: { bio: string; photos: string[] })
           )
         )}
 
-        <div className={photos.length === 0 ? "mx-auto max-w-2xl text-center" : undefined}>
+        {/* The anchor target, deliberately not the outer grid above —
+            that starts with the (on mobile, viewport-filling) photo, so
+            landing there via the nav left the actual heading and bio
+            pushed mostly or entirely below the fold. Anchoring to the
+            text column itself means arriving here shows the content
+            that matters, with the photo (still fully visible on desktop,
+            where it's a side-by-side column) treated as the visual
+            backdrop it's meant to be rather than the thing you scroll to. */}
+        <div
+          id="about"
+          className={`scroll-mt-[18vh] ${photos.length === 0 ? "mx-auto max-w-2xl text-center" : ""}`}
+        >
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-bright">
             About {siteConfig.djName}
           </p>

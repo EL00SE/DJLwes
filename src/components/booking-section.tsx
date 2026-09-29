@@ -26,7 +26,10 @@ export function BookingSection() {
 
   return (
     <ScrollReveal>
-      <div id="booking" className="mx-auto max-w-3xl scroll-mt-24 px-5 py-16 text-center sm:px-8">
+      {/* scroll-mt-[18vh] — see about-section.tsx's id="about" div for why
+          this isn't the tighter, header-height-ish scroll-mt-24 it used
+          to be. */}
+      <div id="booking" className="mx-auto max-w-3xl scroll-mt-[18vh] px-5 py-16 text-center sm:px-8">
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-bright">
           Book {siteConfig.djName}
         </p>

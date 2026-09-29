@@ -146,12 +146,14 @@ test.describe("public pages", () => {
 
     const aboutTop = await page.evaluate(() => document.getElementById("about")?.getBoundingClientRect().top);
     expect(aboutTop).not.toBeUndefined();
-    // Not exactly 0 — the section has scroll-mt-24 (96px) so it rests
-    // just clear of the sticky header rather than flush against it. The
+    // Not exactly 0 — the section has scroll-mt-[18vh] so it rests with
+    // real breathing room below the sticky header rather than flush
+    // against it (about 146-167px across this suite's viewports). The
     // bug this guards against left it at the pre-scroll position instead
-    // (hundreds of px further down), so a generous band well under that
-    // still catches a regression without being tied to the exact offset.
-    expect(Math.abs(aboutTop!)).toBeLessThan(150);
+    // (hundreds/thousands of px further down), so a generous band well
+    // under that still catches a regression without being tied to the
+    // exact per-viewport offset.
+    expect(Math.abs(aboutTop!)).toBeLessThan(220);
   });
 
   test("mobile menu has no Admin Dashboard link when signed out", async ({ page }) => {

@@ -47,7 +47,13 @@ export function HashScrollFix() {
       if (userInteracted) return;
       const el = document.getElementById(id);
       if (!el) return; // hasn't streamed in yet — a later retry will catch it
-      if (Math.abs(el.getBoundingClientRect().top) >= 8) el.scrollIntoView({ block: "start" });
+      // "Already there" means "at its actual resting position" — which
+      // isn't the viewport's literal top edge. The target sections use
+      // scroll-margin-top (Tailwind's scroll-mt-*) for breathing room
+      // above the heading, and scrollIntoView({block:"start"}) honors
+      // that automatically, so this check needs to too.
+      const restingTop = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+      if (Math.abs(el.getBoundingClientRect().top - restingTop) >= 8) el.scrollIntoView({ block: "start" });
     }
 
     scrollToTarget();
