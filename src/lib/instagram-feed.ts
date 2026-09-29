@@ -12,6 +12,38 @@ const TOKEN_ROW_ID = "instagram";
 const POOL_SIZE = 24;
 export const FEED_DISPLAY_COUNT = 6;
 
+// getInstagramFeed() sits inside a <Suspense> boundary on the homepage
+// (see instagram-section.tsx) — everything below it in the page only
+// gets revealed once this resolves. A plain `fetch` with no timeout can
+// hang far longer than any visitor would wait (a slow/unreachable
+// Instagram API, a network blip on the way there) with nothing to force
+// it to give up, silently freezing the rest of the page in an
+// unrevealed streaming state. Bounding it here — both this outer guard
+// and the fetch's own AbortSignal below — guarantees the boundary always
+// resolves, one way or another, within this window.
+const FEED_TIMEOUT_MS = 5000;
+
+/** Resolves within `ms` no matter what `promise` does — falling back to
+ * `fallback` if it hasn't settled by then. `promise` itself keeps
+ * running in the background (this only stops *waiting* on it); pair with
+ * an AbortSignal on the actual I/O where possible so it's properly
+ * cancelled too, not just ignored. */
+export function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      }
+    );
+  });
+}
+
 export type InstagramFeedItem = {
   id: string;
   permalink: string;
@@ -99,6 +131,14 @@ async function getAccessToken(): Promise<string | null> {
 export async function getInstagramFeed(
   count: number = FEED_DISPLAY_COUNT
 ): Promise<InstagramFeedItem[] | null> {
+  // Falling back to [] rather than null on a timeout is deliberate: the
+  // caller treats both "configured but empty/failed" and "genuinely
+  // timed out" the same way, by showing the pasted-links fallback — the
+  // one thing that actually matters here is that this always resolves.
+  return withTimeout(getInstagramFeedUnbounded(count), FEED_TIMEOUT_MS, []);
+}
+
+async function getInstagramFeedUnbounded(count: number): Promise<InstagramFeedItem[] | null> {
   const token = await getAccessToken();
   if (!token) return null;
 
@@ -108,7 +148,7 @@ export async function getInstagramFeed(
     url.searchParams.set("limit", String(POOL_SIZE));
     url.searchParams.set("access_token", token);
 
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetch(url, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(FEED_TIMEOUT_MS) });
     if (!res.ok) {
       console.error(`Instagram feed request failed: ${res.status} ${await res.text()}`);
       return [];
@@ -132,7 +172,7 @@ export async function refreshInstagramToken(): Promise<{ ok: boolean; detail: st
   url.searchParams.set("grant_type", "ig_refresh_token");
   url.searchParams.set("access_token", token);
 
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(FEED_TIMEOUT_MS) });
   if (!res.ok) {
     return { ok: false, detail: `Instagram refused the refresh: ${res.status} ${await res.text()}` };
   }

@@ -124,18 +124,21 @@ test.describe("public pages", () => {
     // Regression check for a real bug, distinct from the one above: a
     // genuine top-level navigation (not a same-app Link click) to
     // "/#about" — e.g. following a shared link while the site's already
-    // open on another page — did scroll there initially, but something
-    // then silently reset it back to the very top shortly after, even
-    // though the target was already in the DOM and scrollable the whole
-    // time. Confirmed via two sequential page.goto() calls, which (unlike
+    // open on another page — could read the target as "already at the
+    // top" while it was actually still sitting inside an unrevealed React
+    // Suspense boundary (the Instagram feed further up the page — see
+    // instagram-feed.ts), well before its real position stabilized.
+    // Confirmed via two sequential page.goto() calls, which (unlike
     // clicking a Link) are each a real navigation. See hash-scroll-fix.tsx.
     await page.goto("/past-events");
     await page.goto("/#about");
 
     // Long enough to outlast every retry in hash-scroll-fix.tsx's own
-    // delay schedule, so this only passes if the fix's later re-asserts
-    // actually did their job, not just the immediate one.
-    await page.waitForTimeout(4500);
+    // delay schedule (including the Instagram feed's own 5s timeout —
+    // see FEED_TIMEOUT_MS in instagram-feed.ts), so this only passes if
+    // the fix's later re-asserts actually did their job, not just the
+    // immediate one.
+    await page.waitForTimeout(7500);
 
     const aboutTop = await page.evaluate(() => document.getElementById("about")?.getBoundingClientRect().top);
     expect(aboutTop).not.toBeUndefined();

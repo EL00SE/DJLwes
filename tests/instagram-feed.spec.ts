@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { parseInstagramMedia, pickRandom } from "../src/lib/instagram-feed";
+import { parseInstagramMedia, pickRandom, withTimeout } from "../src/lib/instagram-feed";
 
 // Pure-function checks (no browser, no network) on the two pieces that
 // sit between Instagram's raw API response and what the page renders.
@@ -48,6 +48,29 @@ test.describe("parseInstagramMedia", () => {
     expect(withCaption.alt.startsWith("Line one line two x")).toBe(true);
     expect(withCaption.alt.length).toBe(120);
     expect(without.alt).toBe("Instagram post");
+  });
+});
+
+test.describe("withTimeout", () => {
+  // This is the mechanism that stops a slow/hanging Instagram API call
+  // from freezing the homepage's Suspense boundary forever — see the
+  // real production bug this guards against in instagram-feed.ts's
+  // FEED_TIMEOUT_MS comment.
+  test("resolves with the real value when it settles in time", async () => {
+    const result = await withTimeout(Promise.resolve("real"), 200, "fallback");
+    expect(result).toBe("real");
+  });
+
+  test("falls back once the timeout elapses, for a promise that never settles", async () => {
+    const neverSettles = new Promise<string>(() => {});
+    const result = await withTimeout(neverSettles, 50, "fallback");
+    expect(result).toBe("fallback");
+  });
+
+  test("falls back rather than rejecting, for a promise that fails", async () => {
+    const rejects = Promise.reject(new Error("network error"));
+    const result = await withTimeout(rejects, 200, "fallback");
+    expect(result).toBe("fallback");
   });
 });
 
