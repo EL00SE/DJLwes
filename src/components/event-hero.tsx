@@ -38,7 +38,7 @@ export function EventHero({
               wordmark, used here as its own thing rather than derived
               from site-config.ts. */}
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-bright">
-            Etfe Al Boiler
+            Etfe Al Boiler presents
           </p>
           <h1 className="mt-3">
             <FitText className="text-glow font-display text-6xl leading-[0.95] tracking-wide text-ink sm:text-7xl lg:text-8xl">

@@ -26,6 +26,37 @@ export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const topBarRef = useRef<HTMLDivElement>(null);
   const [topBarHeight, setTopBarHeight] = useState(0);
+  const navRef = useRef<HTMLElement>(null);
+  const [navHeight, setNavHeight] = useState(0);
+
+  // createPortal needs `document`, which doesn't exist during SSR —
+  // rendering the portal only after mount keeps server and first-paint
+  // client HTML identical (no hydration mismatch), and costs nothing
+  // visible since the menu starts closed either way.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => deferOnce(() => setMounted(true)), []);
+
+  // The dropdown's own content height, measured the same way as
+  // topBarHeight above — tried the CSS-only grid-template-rows 0fr/1fr
+  // trick first (no JS measuring needed), but with this wrapper being
+  // position:fixed and its own height left as 'auto', this browser
+  // resolved BOTH 0fr and 1fr to the row's automatic-minimum size
+  // instead of 1fr growing to the content's real height, so the menu
+  // never actually opened. Animating a measured pixel height sidesteps
+  // that fr-track ambiguity entirely.
+  //
+  // Depends on `mounted`, not []: navRef lives inside the portal below,
+  // which only exists once `mounted` flips true — on first render
+  // navRef.current is still null, so this needs to re-run once the
+  // portal (and the real nav node) actually exists.
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    setNavHeight(el.offsetHeight);
+    const observer = new ResizeObserver(() => setNavHeight(el.offsetHeight));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [mounted]);
 
   // The backdrop + dropdown below are portaled to <body> (see the end of
   // this component) rather than left as children of <header> — <header>'s
@@ -48,13 +79,6 @@ export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-  // createPortal needs `document`, which doesn't exist during SSR —
-  // rendering the portal only after mount keeps server and first-paint
-  // client HTML identical (no hydration mismatch), and costs nothing
-  // visible since the menu starts closed either way.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => deferOnce(() => setMounted(true)), []);
 
   return (
     // Sticky only from `lg:` up. Below that, the header scrolls away with
@@ -150,10 +174,14 @@ export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
           conditionally mounted) so both opening and closing can animate;
           a plain `{isMenuOpen && ...}` would make it vanish instantly on
           close instead of transitioning out. The backdrop fades over the
-          whole page while the panel below grows open in sync, using the
-          CSS grid-template-rows trick to animate to/from an unknown
-          content height (`0fr` -> `1fr`) without any JS measuring.
-          Portaled to <body> — see the comment above topBarRef. */}
+          whole page while the panel below grows open in sync, animating
+          to navHeight (measured above) rather than to `height: auto` —
+          a bare CSS `grid-template-rows: 0fr/1fr` trick avoids needing
+          that measurement, but this wrapper is position:fixed with its
+          own height left as 'auto', and this browser resolved both 0fr
+          and 1fr to the row's tiny automatic-minimum size instead of 1fr
+          growing to the real content height, so the menu never actually
+          opened. Portaled to <body> — see the comment above topBarRef. */}
       {mounted &&
         createPortal(
           <>
@@ -168,12 +196,13 @@ export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
             />
             <div
               aria-hidden={!isMenuOpen}
-              style={{ top: topBarHeight }}
-              className={`fixed inset-x-0 z-40 grid overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out sm:hidden ${
-                isMenuOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-              }`}
+              style={{ top: topBarHeight, height: isMenuOpen ? navHeight : 0 }}
+              className="fixed inset-x-0 z-40 overflow-hidden transition-[height] duration-300 ease-in-out sm:hidden"
             >
-              <nav className="card-edge relative flex flex-col gap-1 overflow-hidden border-t border-line px-5 py-3 font-mono text-sm uppercase tracking-[0.15em]">
+              <nav
+                ref={navRef}
+                className="card-edge relative flex flex-col gap-1 border-t border-line px-5 py-3 font-mono text-sm uppercase tracking-[0.15em]"
+              >
                 {NAV_LINKS.map((link) => (
                   <Link
                     key={link.href}

@@ -135,6 +135,18 @@ body {
   background: transparent;
 }
 
+/* Instagram fallback cards (instagram-posts.tsx) scroll internally to
+   reach the rest of a tall embed rather than being cropped — the site-wide
+   neon scrollbar above is a nice touch for a real scrollable page, but at
+   this card's width its 10px track/thumb reads as a stray UI glitch, not
+   a design element. Stays scrollable, just no visible track. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Fixed film-grain overlay for texture, sits above the background gradients
    but below content. Keeps the flat black from feeling too "digital". */
 .grain-overlay {

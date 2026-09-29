@@ -24,19 +24,18 @@ export function InstagramPosts({ posts }: { posts: string[] }) {
   // that on any re-render. Every URL was already normalized and validated
   // server-side (see lib/instagram.ts), so nothing here is user-typed HTML.
   //
-  // Each card gets a fixed max-height with its own scrollbar rather than
-  // however tall Instagram's real embed (profile header, photo/video,
-  // caption, like/comment row...) happens to be — that varies wildly post
-  // to post (measured 420-690px across a handful of real posts), and
-  // letting every card be its own height made the row/grid look broken.
-  // Capped-and-scrollable keeps every card the same size and keeps 100%
-  // of the post reachable — nothing is ever cropped off, just scrolled to.
+  // No per-card max-height/scroll here — a capped-and-scrollable card was
+  // tried first, but a scrollbar nested inside the page's own horizontal
+  // swipe read as broken, not helpful. Each card is simply however tall
+  // its real Instagram embed is (varies post to post — profile header,
+  // photo/video, caption, like/comment row); the only scroll left on this
+  // whole section is the row's own horizontal one, between posts.
   const html = useMemo(
     () =>
       posts
         .map(
           (url) =>
-            `<div class="w-[85vw] max-w-[380px] max-h-[70vh] shrink-0 snap-center overflow-y-auto rounded-2xl border border-line-strong bg-bg-raised shadow-[0_0_40px_-16px_rgba(177,59,255,0.5)] sm:w-full sm:max-w-none sm:shrink"><blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14" style="max-width:540px;min-width:280px;width:100%;margin:0"><a href="${url}" target="_blank" rel="noreferrer">View this post on Instagram</a></blockquote></div>`
+            `<div class="w-[85vw] max-w-[380px] shrink-0 snap-center overflow-hidden rounded-2xl border border-line-strong bg-bg-raised shadow-[0_0_40px_-16px_rgba(177,59,255,0.5)] sm:w-full sm:max-w-none sm:shrink"><blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14" style="max-width:540px;min-width:280px;width:100%;margin:0"><a href="${url}" target="_blank" rel="noreferrer">View this post on Instagram</a></blockquote></div>`
         )
         .join(""),
     [posts]
@@ -83,7 +82,7 @@ export function InstagramPosts({ posts }: { posts: string[] }) {
       <div
         ref={containerRef}
         dangerouslySetInnerHTML={{ __html: html }}
-        className="mt-6 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-4 sm:grid sm:grid-cols-3 sm:items-stretch sm:overflow-visible sm:pb-0"
+        className="no-scrollbar mt-6 flex snap-x snap-mandatory items-start justify-center gap-4 overflow-x-auto sm:grid sm:grid-cols-3 sm:items-stretch sm:justify-normal sm:overflow-visible"
       />
     </InstagramFrame>
   );
