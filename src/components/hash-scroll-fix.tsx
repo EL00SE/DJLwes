@@ -2,54 +2,59 @@
 
 import { useEffect } from "react";
 
-// Same "re-assert a few times over a few seconds, rather than trust one
-// attempt" idea as fit-text.tsx's retryDelays — needed here for two
-// distinct, both confirmed-by-reproduction problems:
-//   1. The target section hasn't streamed into the DOM yet (a slow
-//      connection, a cold serverless start) — the early attempts are for
-//      this; document.getElementById() simply returns null until then.
-//   2. On a genuine top-level navigation to a hash URL that follows an
-//      *earlier* navigation in the same tab/session (e.g. someone
-//      already has the site open on another page and follows a shared
-//      "/#about" link, or a search engine's own address bar), whatever
-//      already-scrolled-to position this reaches gets silently reset
-//      back to the very top shortly after — reproduced reliably even
-//      though the target element is already in the DOM and scrollable
-//      the whole time. The later attempts re-correct that.
+// TEMPORARY DIAGNOSTIC BUILD — instruments every retry and every scroll
+// event into window.__hsfDebug so the real production failure mode can
+// be inspected directly instead of guessed at further. Revert once
+// diagnosed.
 const RETRY_DELAYS_MS = [50, 150, 300, 600, 1000, 1500, 2500, 4000];
 
-/** Next's own scroll-to-hash-on-navigation loses the race on this app's
- * dynamically-rendered pages (see problem 1 above) — and, separately,
- * doesn't survive a later scroll reset from elsewhere (problem 2). Both
- * only affect navigating to a hash link *from a different page/load*; a
- * same-page hash click already works, since the target is already there
- * and nothing scrolls it back afterward.
- *
- * Rendered inside template.tsx (which remounts on every navigation,
- * unlike layout.tsx) so this re-runs on every route change, not just the
- * very first page load. */
+declare global {
+  interface Window {
+    __hsfDebug?: unknown[];
+  }
+}
+
 export function HashScrollFix() {
   useEffect(() => {
     const hash = window.location.hash;
     if (!hash) return;
     const id = decodeURIComponent(hash.slice(1));
 
-    function scrollToTarget() {
+    const t0 = performance.now();
+    window.__hsfDebug = [];
+    const log = (entry: Record<string, unknown>) =>
+      window.__hsfDebug!.push({ t: Math.round(performance.now() - t0), ...entry });
+
+    const scrollListener = () => log({ ev: "scroll-event", scrollY: window.scrollY });
+    window.addEventListener("scroll", scrollListener, { passive: true });
+
+    function scrollToTarget(label: string) {
       const el = document.getElementById(id);
-      if (!el) return; // hasn't streamed in yet — a later retry will catch it
-      const alreadyThere = Math.abs(el.getBoundingClientRect().top) < 8;
-      // Only re-correct while still near the very top of the page —
-      // that's the specific symptom problem 2 above describes, not a
-      // general "keep this element in view no matter what" policy. A
-      // visitor who's since scrolled elsewhere on purpose (scrollY well
-      // past 0) is left alone rather than yanked back.
+      const scrollYBefore = window.scrollY;
+      if (!el) {
+        log({ ev: "attempt", label, found: false, scrollYBefore });
+        return;
+      }
+      const top = el.getBoundingClientRect().top;
+      const alreadyThere = Math.abs(top) < 8;
       const stillNearTop = window.scrollY < 40;
-      if (!alreadyThere && stillNearTop) el.scrollIntoView({ block: "start" });
+      const willScroll = !alreadyThere && stillNearTop;
+      log({ ev: "attempt", label, found: true, top, scrollYBefore, alreadyThere, stillNearTop, willScroll });
+      if (willScroll) el.scrollIntoView({ block: "start" });
     }
 
-    scrollToTarget();
-    const timeouts = RETRY_DELAYS_MS.map((ms) => setTimeout(scrollToTarget, ms));
-    return () => timeouts.forEach(clearTimeout);
+    scrollToTarget("immediate");
+    const timeouts = RETRY_DELAYS_MS.map((ms) => setTimeout(() => scrollToTarget(`retry-${ms}`), ms));
+    const finalLog = setTimeout(() => {
+      log({ ev: "final", scrollY: window.scrollY });
+      console.log("HSF_DEBUG", JSON.stringify(window.__hsfDebug));
+    }, 6000);
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      clearTimeout(finalLog);
+      window.removeEventListener("scroll", scrollListener);
+    };
   }, []);
 
   return null;
