@@ -4,7 +4,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
-import { siteConfig } from "@/lib/site-config";
 import { bookingContact } from "@/lib/site-content";
 import { deferOnce } from "@/lib/defer";
 
@@ -83,7 +82,12 @@ export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
             />
           </span>
           <span className="whitespace-nowrap font-display text-2xl tracking-wide text-ink transition-colors group-hover:text-accent-bright">
-            {siteConfig.djName.toUpperCase()}
+            {/* Deliberately "Etfe Al Boiler" here, not
+                siteConfig.eventSeriesName ("Etfe El Boiler", still used
+                everywhere else — About section, metadata, footer, etc.)
+                — this header wordmark's spelling was requested as its
+                own thing, separate from the rest of the site's copy. */}
+            ETFE AL BOILER
           </span>
         </Link>
 
