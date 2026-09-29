@@ -2,8 +2,8 @@ import { siteConfig } from "@/lib/site-config";
 import { bookingContact } from "@/lib/site-content";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
-/** Private-booking contact links (weddings, private parties, corporate
- * events) — plain WhatsApp/email/Instagram links, not a form. Whichever
+/** Private-booking contact links (private parties, corporate events) —
+ * plain WhatsApp/email/Instagram links, not a form. Whichever
  * of bookingContact's three fields are set show up here; hides entirely
  * if none are. */
 export function BookingSection() {
@@ -34,8 +34,8 @@ export function BookingSection() {
           Planning a private event?
         </h2>
         <p className="mx-auto mt-5 max-w-prose text-base leading-relaxed text-ink-muted">
-          Weddings, private parties, corporate nights — {siteConfig.djName} plays those too. Reach
-          out directly and let&apos;s talk details.
+          Private parties, corporate nights — {siteConfig.djName} plays those too. Reach out
+          directly and let&apos;s talk details.
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">

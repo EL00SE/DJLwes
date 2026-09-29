@@ -7,7 +7,8 @@ export const aboutContent = {
   bio: "DJ Lwes has spent the last few years building Etfe El Boiler from a one-room warehouse night into Haifa's home for deep, hypnotic house — low lights, loud subs, no phones on the floor. Every set is a slow build: no big drops, no filler, just a room that locks in together for six hours straight.",
   socials: [
     { label: "Instagram", href: "https://instagram.com/etfealboiler" },
-    { label: "SoundCloud", href: "https://soundcloud.com/djlwes" },
+    { label: "SoundCloud", href: "https://soundcloud.com/lwes-daod" },
+    { label: "YouTube", href: "https://www.youtube.com/@DjLwes" },
   ],
   // A SoundCloud "widget" embed URL (Share -> Embed on any SoundCloud
   // track/set gives you this exact `w.soundcloud.com/player/?url=...`
