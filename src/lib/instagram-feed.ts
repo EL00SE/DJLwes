@@ -49,6 +49,10 @@ export type InstagramFeedItem = {
   permalink: string;
   imageUrl: string;
   isVideo: boolean;
+  /** The actual video file, for VIDEO items only — lets the feed play it
+   * natively on the page (see instagram-video-tile.tsx) instead of only
+   * linking out to Instagram, which is all a plain thumbnail can do. */
+  videoUrl: string | null;
   alt: string;
 };
 
@@ -79,6 +83,7 @@ export function parseInstagramMedia(json: unknown): InstagramFeedItem[] {
       permalink: media.permalink,
       imageUrl,
       isVideo,
+      videoUrl: isVideo ? (media.media_url ?? null) : null,
       alt: media.caption?.replace(/\s+/g, " ").trim().slice(0, 120) || "Instagram post",
     });
   }

@@ -21,6 +21,11 @@ test.describe("parseInstagramMedia", () => {
       ["https://cdn/a.jpg", false],
       ["https://cdn/b.jpg", true],
     ]);
+    // The actual video file — lets a video item play right on the page
+    // (instagram-video-tile.tsx) instead of only linking out. Never set
+    // for a plain image.
+    expect(items[0].videoUrl).toBeNull();
+    expect(items[1].videoUrl).toBe("https://cdn/b.mp4");
   });
 
   test("drops entries that can't be shown, and tolerates garbage", () => {
