@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { formatEventDate, formatEventTime, parseLines } from "@/lib/format";
-import { siteConfig } from "@/lib/site-config";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { FitText } from "@/components/fit-text";
 import { BuyTicketsButton } from "@/components/buy-tickets-section";
@@ -34,8 +33,12 @@ export function EventHero({
 
       <div className="relative z-10 mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1.1fr_1fr] lg:items-center">
         <div className="min-w-0">
+          {/* Deliberately hardcoded, not siteConfig.djName ("DJ Lwes") —
+              same "Etfe Al Boiler" spelling requested for the header
+              wordmark, used here as its own thing rather than derived
+              from site-config.ts. */}
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent-bright">
-            {siteConfig.djName} presents
+            Etfe Al Boiler
           </p>
           <h1 className="mt-3">
             <FitText className="text-glow font-display text-6xl leading-[0.95] tracking-wide text-ink sm:text-7xl lg:text-8xl">

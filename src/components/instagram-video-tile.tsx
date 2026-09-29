@@ -28,6 +28,8 @@ export function InstagramVideoTile({
   if (playing) {
     return (
       // Instagram's API doesn't provide captions/subtitles for a post's video.
+      // object-contain (not -cover) — see instagram-feed.tsx's comment on
+      // why nothing here should crop the original content.
       <video
         src={videoUrl}
         poster={posterUrl}
@@ -35,7 +37,7 @@ export function InstagramVideoTile({
         autoPlay
         playsInline
         aria-label={alt}
-        className="h-full w-full object-cover"
+        className="h-full w-full object-contain"
       />
     );
   }
@@ -51,8 +53,8 @@ export function InstagramVideoTile({
         alt={alt}
         fill
         unoptimized
-        sizes="(min-width: 640px) 33vw, 50vw"
-        className="object-cover transition-transform duration-300 group-hover:scale-105"
+        sizes="(min-width: 640px) 33vw, 72vw"
+        className="object-contain transition-transform duration-300 group-hover:scale-105"
       />
       <span
         aria-hidden
