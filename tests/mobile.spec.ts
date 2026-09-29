@@ -120,6 +120,33 @@ test.describe("public pages", () => {
     });
   }
 
+  test("a hard navigation straight to a hash URL scrolls there and stays put", async ({ page }) => {
+    // Regression check for a real bug, distinct from the one above: a
+    // genuine top-level navigation (not a same-app Link click) to
+    // "/#about" — e.g. following a shared link while the site's already
+    // open on another page — did scroll there initially, but something
+    // then silently reset it back to the very top shortly after, even
+    // though the target was already in the DOM and scrollable the whole
+    // time. Confirmed via two sequential page.goto() calls, which (unlike
+    // clicking a Link) are each a real navigation. See hash-scroll-fix.tsx.
+    await page.goto("/past-events");
+    await page.goto("/#about");
+
+    // Long enough to outlast every retry in hash-scroll-fix.tsx's own
+    // delay schedule, so this only passes if the fix's later re-asserts
+    // actually did their job, not just the immediate one.
+    await page.waitForTimeout(4500);
+
+    const aboutTop = await page.evaluate(() => document.getElementById("about")?.getBoundingClientRect().top);
+    expect(aboutTop).not.toBeUndefined();
+    // Not exactly 0 — the section has scroll-mt-24 (96px) so it rests
+    // just clear of the sticky header rather than flush against it. The
+    // bug this guards against left it at the pre-scroll position instead
+    // (hundreds of px further down), so a generous band well under that
+    // still catches a regression without being tied to the exact offset.
+    expect(Math.abs(aboutTop!)).toBeLessThan(150);
+  });
+
   test("mobile menu has no Admin Dashboard link when signed out", async ({ page }) => {
     await page.goto("/");
     const hamburger = page.getByRole("button", { name: "Open menu" });
