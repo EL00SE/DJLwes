@@ -34,7 +34,7 @@ const TILE_CLASSNAME =
 export function InstagramFeed({ items }: { items: InstagramFeedItem[] }) {
   return (
     <InstagramFrame>
-      <ul className="no-scrollbar mt-6 flex snap-x snap-mandatory justify-center gap-3 overflow-x-auto sm:grid sm:grid-cols-3 sm:justify-normal sm:gap-4 sm:overflow-visible">
+      <ul className="no-scrollbar mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-[14vw] scroll-px-[14vw] sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 sm:scroll-px-0">
         {items.map((item) => (
           <li key={item.id} className={TILE_CLASSNAME}>
             {item.isVideo && item.videoUrl ? (

@@ -82,7 +82,14 @@ export function InstagramPosts({ posts }: { posts: string[] }) {
       <div
         ref={containerRef}
         dangerouslySetInnerHTML={{ __html: html }}
-        className="no-scrollbar mt-6 flex snap-x snap-mandatory items-start justify-center gap-4 overflow-x-auto sm:grid sm:grid-cols-3 sm:items-stretch sm:justify-normal sm:overflow-visible"
+        // Centered via matching side padding + scroll-padding (px-[7.5vw],
+        // half of the card's own w-[85vw]) rather than `justify-center` —
+        // justify-content's overflow behavior ("safe" alignment) is
+        // implemented inconsistently enough across browsers that it isn't
+        // trustworthy for this; padding the scrollable track itself means
+        // every snap position, including the very first/last card, rests
+        // with an equal peek of its neighbor on both sides everywhere.
+        className="no-scrollbar mt-6 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto px-[7.5vw] scroll-px-[7.5vw] sm:grid sm:grid-cols-3 sm:items-stretch sm:overflow-visible sm:px-0 sm:scroll-px-0"
       />
     </InstagramFrame>
   );
