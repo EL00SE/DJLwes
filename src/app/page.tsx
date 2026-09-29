@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import Link from "next/link";
 import { getActiveEvent, getMostRecentPastEventWithGallery } from "@/lib/data";
 import { getAboutContent } from "@/lib/about-content";
+import { getInstagramFeed } from "@/lib/instagram-feed";
 import { EventHero } from "@/components/event-hero";
 // Both the instant-PayPal-purchase flow (EventExperience) and the
 // free-request-then-approve flow (GuestRequestExperience) are kept in the
@@ -77,8 +77,12 @@ export default async function HomePage() {
   }
 
   // Only fetched once there's actually an active event to render this
-  // alongside — the no-event branch above returns before ever needing it.
-  const pastEventWithGallery = await getMostRecentPastEventWithGallery();
+  // alongside — the no-event branch above returns before ever needing
+  // either. Independent of each other, so run together.
+  const [pastEventWithGallery, instagramFeed] = await Promise.all([
+    getMostRecentPastEventWithGallery(),
+    getInstagramFeed(),
+  ]);
 
   return (
     <div>
@@ -93,11 +97,7 @@ export default async function HomePage() {
         disclaimer={event.buyDisclaimer}
         entryRequirements={event.entryRequirements}
       />
-      {/* Streams in on its own — a slow Instagram response never holds
-          up the event details above or anything below. */}
-      <Suspense fallback={null}>
-        <InstagramSection />
-      </Suspense>
+      <InstagramSection feed={instagramFeed} fallbackPosts={aboutContent.instagramPosts} />
       <LineupSection lineup={event.lineup} />
       <TicketTiersInfo ticketTypes={event.ticketTypes} />
       <BuyTicketsSection buyLink={event.buyLink} disclaimer={event.buyDisclaimer} />

@@ -3,32 +3,23 @@
 import { useEffect } from "react";
 
 // Same "re-assert a few times over a few seconds, rather than trust one
-// attempt" idea as fit-text.tsx's retryDelays — needed here for two
-// distinct, both confirmed-by-reproduction problems:
-//   1. The target section hasn't streamed into the DOM yet (a slow
-//      connection, a cold serverless start) — the early attempts are for
-//      this; document.getElementById() simply returns null until then.
-//   2. On a genuine top-level navigation to a hash URL that follows an
-//      *earlier* navigation in the same tab/session (e.g. someone
-//      already has the site open on another page and follows a shared
-//      "/#about" link, or a search engine's own address bar), the target
-//      can sit inside an unrevealed React Suspense boundary (the
-//      Instagram feed, further up the page — see instagram-feed.ts) for
-//      a while: still in the DOM, but not yet laid out in its real
-//      position, so an early getBoundingClientRect() reads it as "already
-//      at the top" when it isn't. That boundary is itself bounded to 5s
-//      (FEED_TIMEOUT_MS in instagram-feed.ts) — the later retries here
-//      comfortably outlast that, plus a little room for layout to settle
-//      once it's revealed, rather than giving up right before it would
-//      have succeeded.
-const RETRY_DELAYS_MS = [50, 150, 300, 600, 1000, 1500, 2500, 4000, 5500, 7000];
+// attempt" idea as fit-text.tsx's retryDelays. Mainly for the target
+// section not having streamed into the DOM yet (a slow connection, a
+// cold serverless start, real Neon/Postgres latency) — document.
+// getElementById() simply returns null until then, and the early
+// attempts are what catch it once it does. The tail is left generously
+// long (this used to matter even more before an actual page-freezing
+// bug — a Next.js loading.tsx implicit Suspense boundary whose reveal
+// script could silently never fire — was found and fixed at the root;
+// see the "Removed loading.tsx" note in git history if this behavior
+// ever resurfaces) since a few harmless extra no-op checks cost nothing.
+const RETRY_DELAYS_MS = [50, 150, 300, 600, 1000, 1500, 2500, 4000];
 
 /** Next's own scroll-to-hash-on-navigation loses the race on this app's
- * dynamically-rendered pages (see problem 1 above) — and, separately,
- * doesn't survive a later scroll reset from elsewhere (problem 2). Both
- * only affect navigating to a hash link *from a different page/load*; a
- * same-page hash click already works, since the target is already there
- * and nothing scrolls it back afterward.
+ * dynamically-rendered pages — the target section may not have streamed
+ * into the DOM yet by the time it tries, and it never retries. Only
+ * affects navigating to a hash link *from a different page/load*; a
+ * same-page hash click already works, since the target is already there.
  *
  * Rendered inside template.tsx (which remounts on every navigation,
  * unlike layout.tsx) so this re-runs on every route change, not just the

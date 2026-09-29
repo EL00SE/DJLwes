@@ -121,24 +121,28 @@ test.describe("public pages", () => {
   }
 
   test("a hard navigation straight to a hash URL scrolls there and stays put", async ({ page }) => {
-    // Regression check for a real bug, distinct from the one above: a
+    // Regression check for a real (and, while it lasted, severe) bug: a
     // genuine top-level navigation (not a same-app Link click) to
     // "/#about" — e.g. following a shared link while the site's already
-    // open on another page — could read the target as "already at the
-    // top" while it was actually still sitting inside an unrevealed React
-    // Suspense boundary (the Instagram feed further up the page — see
-    // instagram-feed.ts), well before its real position stabilized.
-    // Confirmed via two sequential page.goto() calls, which (unlike
-    // clicking a Link) are each a real navigation. See hash-scroll-fix.tsx.
+    // open on another page — could leave the entire page permanently
+    // stuck behind an unrevealed React Suspense boundary, well short of
+    // #about ever existing in a laid-out position at all. Root cause
+    // turned out to be src/app/loading.tsx's *implicit* Suspense boundary
+    // (the Next.js file convention, not anything of this app's own
+    // making) whose "reveal" script could silently never fire on this
+    // exact navigation pattern — fixed by removing loading.tsx (and its
+    // siblings under other routes) app-wide rather than working around a
+    // framework-level streaming edge case. Confirmed via two sequential
+    // page.goto() calls, which (unlike clicking a Link) are each a real
+    // navigation. See hash-scroll-fix.tsx for the (now much smaller)
+    // remaining reason this component still exists.
     await page.goto("/past-events");
     await page.goto("/#about");
 
     // Long enough to outlast every retry in hash-scroll-fix.tsx's own
-    // delay schedule (including the Instagram feed's own 5s timeout —
-    // see FEED_TIMEOUT_MS in instagram-feed.ts), so this only passes if
-    // the fix's later re-asserts actually did their job, not just the
-    // immediate one.
-    await page.waitForTimeout(7500);
+    // delay schedule, so this only passes if the fix's later re-asserts
+    // actually did their job, not just the immediate one.
+    await page.waitForTimeout(4500);
 
     const aboutTop = await page.evaluate(() => document.getElementById("about")?.getBoundingClientRect().top);
     expect(aboutTop).not.toBeUndefined();

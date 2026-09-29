@@ -1,66 +1,31 @@
-/* eslint-disable react-hooks/purity, react-hooks/error-boundaries -- temporary diagnostic file, reverted shortly */
-import { getAboutContent } from "@/lib/about-content";
-import { getInstagramFeed, withTimeout } from "@/lib/instagram-feed";
+import type { InstagramFeedItem } from "@/lib/instagram-feed";
 import { InstagramFeed } from "@/components/instagram-feed";
 import { InstagramPosts } from "@/components/instagram-posts";
 
-// TEMPORARY DIAGNOSTIC BUILD — server-side console output doesn't reach
-// this conversation, so this renders what actually happened (and how
-// long each step took) directly into the page as a hidden, always-
-// present element instead. Revert once diagnosed.
-export async function InstagramSection() {
-  const t0 = Date.now();
-  let debug: Record<string, unknown>;
-  let items: React.ReactNode = null;
-
-  try {
-    const feed = await getInstagramFeed();
-    const feedMs = Date.now() - t0;
-    const feedResult = feed === null ? "null (not configured)" : `array(${feed.length})`;
-
-    if (feed && feed.length > 0) {
-      debug = { t0, feedMs, feedResult };
-      items = <InstagramFeed items={feed} />;
-    } else {
-      const t1 = Date.now();
-      const aboutContent = await withTimeout(getAboutContent(), 5000, null);
-      const aboutContentMs = Date.now() - t1;
-      const instagramPosts = aboutContent?.instagramPosts ?? [];
-      debug = {
-        t0,
-        feedMs,
-        feedResult,
-        aboutContentMs,
-        aboutContentTimedOut: aboutContent === null,
-        postsCount: instagramPosts.length,
-        totalMs: Date.now() - t0,
-      };
-      items = <InstagramPosts posts={instagramPosts} />;
-    }
-  } catch (err) {
-    debug = {
-      t0,
-      error: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
-      totalMs: Date.now() - t0,
-    };
-  }
-
-  return (
-    <>
-      <DebugMarker debug={debug} />
-      {items}
-    </>
-  );
-}
-
-function DebugMarker({ debug }: { debug: Record<string, unknown> }) {
-  return (
-    <div
-      id="hsf-instagram-debug"
-      aria-hidden
-      style={{ position: "absolute", width: 1, height: 1, overflow: "hidden" }}
-    >
-      {JSON.stringify(debug)}
-    </div>
-  );
+/** The homepage's Instagram section. Prefers the live feed from the
+ * Instagram API (random recent posts, no upkeep); if that isn't set up —
+ * or comes back empty, say an expired token — falls back to whatever
+ * post links the admin pasted in /admin/about, and shows nothing if
+ * there are none of those either.
+ *
+ * Takes both already-resolved rather than fetching them itself: this
+ * used to be its own async Server Component in a <Suspense> boundary so
+ * a slow Instagram response couldn't hold up the rest of the page — in
+ * practice that hit a Next.js/React streaming edge case where the
+ * boundary's "reveal" script could silently never run, permanently
+ * freezing everything below it (confirmed in production; not simply
+ * theorized). getInstagramFeed() is itself time-bounded now (see
+ * FEED_TIMEOUT_MS in instagram-feed.ts), so the worst case of fetching
+ * it plainly alongside the page's other data — a few extra seconds if
+ * Instagram's API is slow — is far preferable to the page silently
+ * failing to render at all. */
+export function InstagramSection({
+  feed,
+  fallbackPosts,
+}: {
+  feed: InstagramFeedItem[] | null;
+  fallbackPosts: string[];
+}) {
+  if (feed && feed.length > 0) return <InstagramFeed items={feed} />;
+  return <InstagramPosts posts={fallbackPosts} />;
 }
