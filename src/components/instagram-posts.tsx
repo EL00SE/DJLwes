@@ -30,12 +30,20 @@ export function InstagramPosts({ posts }: { posts: string[] }) {
   // its real Instagram embed is (varies post to post — profile header,
   // photo/video, caption, like/comment row); the only scroll left on this
   // whole section is the row's own horizontal one, between posts.
+  //
+  // Every card carries its own mx-2 (rather than the row using `gap`, which
+  // was tried first — it can't add space before the first or after the last
+  // item, so those two ends had no room to peek symmetrically). With that
+  // margin on every card, the first/last card's peek is identical to every
+  // other gap in the row by construction — nothing to compute or keep in
+  // sync with the page's own padding, it's just the same margin as
+  // everywhere else, front and back.
   const html = useMemo(
     () =>
       posts
         .map(
           (url) =>
-            `<div class="w-[85vw] max-w-[380px] shrink-0 snap-center overflow-hidden rounded-2xl border border-line-strong bg-bg-raised shadow-[0_0_40px_-16px_rgba(177,59,255,0.5)] sm:w-full sm:max-w-none sm:shrink"><blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14" style="max-width:540px;min-width:280px;width:100%;margin:0"><a href="${url}" target="_blank" rel="noreferrer">View this post on Instagram</a></blockquote></div>`
+            `<div class="mx-2 w-[85vw] max-w-[380px] shrink-0 snap-center overflow-hidden rounded-2xl border border-line-strong bg-bg-raised shadow-[0_0_40px_-16px_rgba(177,59,255,0.5)] sm:mx-0 sm:w-full sm:max-w-none sm:shrink"><blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14" style="max-width:540px;min-width:280px;width:100%;margin:0"><a href="${url}" target="_blank" rel="noreferrer">View this post on Instagram</a></blockquote></div>`
         )
         .join(""),
     [posts]
@@ -82,14 +90,7 @@ export function InstagramPosts({ posts }: { posts: string[] }) {
       <div
         ref={containerRef}
         dangerouslySetInnerHTML={{ __html: html }}
-        // Centered via matching side padding + scroll-padding (px-[7.5vw],
-        // half of the card's own w-[85vw]) rather than `justify-center` —
-        // justify-content's overflow behavior ("safe" alignment) is
-        // implemented inconsistently enough across browsers that it isn't
-        // trustworthy for this; padding the scrollable track itself means
-        // every snap position, including the very first/last card, rests
-        // with an equal peek of its neighbor on both sides everywhere.
-        className="no-scrollbar mt-6 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto px-[7.5vw] scroll-px-[7.5vw] sm:grid sm:grid-cols-3 sm:items-stretch sm:overflow-visible sm:px-0 sm:scroll-px-0"
+        className="no-scrollbar mt-6 flex snap-x snap-mandatory items-start overflow-x-auto sm:grid sm:grid-cols-3 sm:items-stretch sm:gap-4 sm:overflow-visible"
       />
     </InstagramFrame>
   );

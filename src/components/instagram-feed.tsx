@@ -5,8 +5,12 @@ import { InstagramVideoTile } from "@/components/instagram-video-tile";
 
 // Shared by every tile below (and by instagram-video-tile.tsx's own poster
 // state) so the photo/video and its "not full-bleed" background agree.
+// mx-1.5 (not the row using `gap`) so the first/last tile peeks by the same
+// amount as every gap between tiles — `gap` can't add space before the
+// first or after the last item, so those two ends had no room to peek
+// symmetrically. See instagram-posts.tsx's matching comment.
 const TILE_CLASSNAME =
-  "relative aspect-square w-[72vw] max-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl border border-line-strong bg-bg-raised shadow-[0_0_40px_-16px_rgba(177,59,255,0.5)] sm:w-auto sm:max-w-none sm:shrink";
+  "relative mx-1.5 aspect-square w-[72vw] max-w-[320px] shrink-0 snap-center overflow-hidden rounded-2xl border border-line-strong bg-bg-raised shadow-[0_0_40px_-16px_rgba(177,59,255,0.5)] sm:mx-0 sm:w-auto sm:max-w-none sm:shrink";
 
 /** A grid of the account's recent posts. Nothing here links out to
  * Instagram — the only way off this section is the "Follow on Instagram"
@@ -34,7 +38,7 @@ const TILE_CLASSNAME =
 export function InstagramFeed({ items }: { items: InstagramFeedItem[] }) {
   return (
     <InstagramFrame>
-      <ul className="no-scrollbar mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-[14vw] scroll-px-[14vw] sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 sm:scroll-px-0">
+      <ul className="no-scrollbar mt-6 flex snap-x snap-mandatory overflow-x-auto sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible">
         {items.map((item) => (
           <li key={item.id} className={TILE_CLASSNAME}>
             {item.isVideo && item.videoUrl ? (
