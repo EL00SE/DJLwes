@@ -107,10 +107,12 @@ test.describe("public pages", () => {
     expect(tops.description!).toBeGreaterThan(tops.buy!);
   });
 
-  // The hero's Buy Tickets button gets a second copy pinned to the top of
-  // the screen once you've scrolled past the first, gone again once you
-  // scroll back up to it. Only below `lg:`.
-  test("buy button pins to the top after scrolling past it, and unpins on the way back", async ({
+  // The hero's Buy Tickets button sticks to the top of the screen once it
+  // scrolls up there, and drops back into place on the way back up. It's
+  // really two identical buttons trading places (the real one and a fixed
+  // twin), so the checks are that they trade at the right moment, match
+  // in size, and that only one is ever showing. Only below `lg:`.
+  test("buy button sticks to the top as the same button, and releases on the way back", async ({
     page,
   }) => {
     await page.goto("/");
@@ -132,24 +134,49 @@ test.describe("public pages", () => {
       )
     );
 
-    const pinned = page.locator("div.fixed.inset-x-0.top-0.z-20");
-    await expect(pinned).toHaveCount(0);
+    const original = page.getByTestId("buy-original").locator("a, button");
+    const pinned = page.getByTestId("buy-pinned");
+    const pinnedButton = pinned.locator("a, button");
 
-    const buyTop = await page.evaluate(() => {
-      const el = document.querySelector('main section a[href^="http"], main section button[disabled]');
-      return el ? el.getBoundingClientRect().top + window.scrollY : 0;
-    });
+    // Scrolls so the real button's top edge sits `topPx` from the top of
+    // the screen (its layout box is measurable even while it's hidden).
+    const originalDocTop = await original.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+    const scrollOriginalTo = (topPx: number) =>
+      page.evaluate((y) => window.scrollTo(0, y), originalDocTop - topPx);
 
-    await page.evaluate((y) => window.scrollTo(0, y + 600), buyTop);
-    await expect(pinned).toHaveCount(1);
+    // Before it reaches the top: the real button shows, the twin doesn't.
+    await expect(pinned).toBeHidden();
+    await expect(original).toBeVisible();
+    await scrollOriginalTo(60);
+    await expect(pinned).toBeHidden();
+    await expect(original).toBeVisible();
+
+    // Just short of the pin line (12px): still the real one.
+    await scrollOriginalTo(20);
+    await expect(pinned).toBeHidden();
+    await expect(original).toBeVisible();
+
+    // Reached it: the twin takes over, in the same spot...
+    await scrollOriginalTo(4);
     await expect(pinned).toBeVisible();
-    expect((await pinned.boundingBox())!.y).toBeCloseTo(0, 0);
+    await expect(original).toHaveCSS("visibility", "hidden");
+    const pinnedBox = (await pinnedButton.boundingBox())!;
+    expect(pinnedBox.y).toBeCloseTo(12, 0);
+    // ...and as the same button — same size, not a bar around it.
+    const originalBox = (await original.boundingBox())!;
+    expect(pinnedBox.width).toBeCloseTo(originalBox.width, 0);
+    expect(pinnedBox.height).toBeCloseTo(originalBox.height, 0);
+    expect(pinnedBox.x).toBeCloseTo(originalBox.x, 0);
 
+    // Stays put for the rest of the page.
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect(pinned).toHaveCount(1);
+    await expect(pinned).toBeVisible();
+    expect((await pinnedButton.boundingBox())!.y).toBeCloseTo(12, 0);
 
+    // Back up to where it started: the real one is back, the twin is gone.
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(pinned).toHaveCount(0);
+    await expect(pinned).toBeHidden();
+    await expect(original).toBeVisible();
   });
 
   // Regression check for a real bug: clicking a hash-anchor nav link
