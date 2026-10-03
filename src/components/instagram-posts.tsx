@@ -86,11 +86,21 @@ export function InstagramPosts({ posts }: { posts: string[] }) {
     <InstagramFrame>
       {/* Below sm:, one card at a time — a horizontal swipe rather than a
           cramped grid on a narrow screen. sm: and up switches to a plain
-          grid, wrapping to a new row past 3. */}
+          grid, wrapping to a new row past 3.
+
+          max-sm:contain-paint — on a phone, Instagram's embeds make the
+          whole page balloon sideways (measured 320px -> 1507px) while you
+          scroll past them: the browser grows its layout viewport to fit,
+          which resizes everything pinned to it (the sticky Buy button
+          went from 280px to 891px wide) and zooms the page out. Ordinary
+          overflow clipping (overflow-x: clip on the section, or on
+          <main>) does NOT stop it — only containing the paint of this
+          box does. Below sm: only: at sm: and up this is a grid whose
+          card glow must be allowed to spill out. */}
       <div
         ref={containerRef}
         dangerouslySetInnerHTML={{ __html: html }}
-        className="no-scrollbar mt-6 flex snap-x snap-mandatory items-start overflow-x-auto sm:grid sm:grid-cols-3 sm:items-stretch sm:gap-4 sm:overflow-visible"
+        className="no-scrollbar mt-6 flex snap-x snap-mandatory items-start overflow-x-auto max-sm:contain-paint sm:grid sm:grid-cols-3 sm:items-stretch sm:gap-4 sm:overflow-visible"
       />
     </InstagramFrame>
   );

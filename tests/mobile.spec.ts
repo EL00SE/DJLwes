@@ -264,6 +264,54 @@ test.describe("public pages", () => {
   });
 });
 
+// The other projects here are desktop Chrome at a phone-sized window, which
+// never exhibits this: real mobile browsers (isMobile) grow their layout
+// viewport to fit any sideways overflow, instead of just adding a scrollbar.
+// On the live site Instagram's embeds triggered that while scrolling past
+// them (page 320px -> 1507px), so everything pinned to the viewport — the
+// sticky Buy button — changed size, and the whole page zoomed out. The
+// embeds only load from instagram.com, so this can only catch a regression
+// when that's reachable; it passes (rather than flakes) when it isn't.
+test.describe("on a real phone (mobile emulation)", () => {
+  test.use({ isMobile: true, hasTouch: true });
+
+  test("scrolling the whole page never widens it, and the Buy button never changes size", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForTimeout(1000);
+
+    const result = await page.evaluate(async () => {
+      const deviceWidth = document.documentElement.clientWidth;
+      const liveButtonWidth = () => {
+        for (const id of ["buy-original", "buy-pinned"]) {
+          const el = document.querySelector(`[data-testid="${id}"] a, [data-testid="${id}"] button`);
+          if (el && getComputedStyle(el).visibility === "visible") return Math.round(el.getBoundingClientRect().width);
+        }
+        return null;
+      };
+      const startWidth = liveButtonWidth();
+      let maxDocWidth = 0;
+      let maxViewportWidth = 0;
+      const buttonWidths = new Set<number>();
+      const total = document.documentElement.scrollHeight;
+      for (let y = 0; y <= total; y += 60) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 120));
+        maxDocWidth = Math.max(maxDocWidth, document.documentElement.scrollWidth);
+        maxViewportWidth = Math.max(maxViewportWidth, window.innerWidth);
+        const w = liveButtonWidth();
+        if (w !== null) buttonWidths.add(w);
+      }
+      return { deviceWidth, startWidth, maxDocWidth, maxViewportWidth, buttonWidths: [...buttonWidths] };
+    });
+
+    expect(result.maxDocWidth).toBeLessThanOrEqual(result.deviceWidth);
+    expect(result.maxViewportWidth).toBeLessThanOrEqual(result.deviceWidth);
+    expect(result.buttonWidths).toEqual([result.startWidth]);
+  });
+});
+
 test.describe("admin pages (signed in)", () => {
   const ADMIN_PAGES = ["/admin", "/admin/about", "/admin/events", "/admin/events/new"];
 
