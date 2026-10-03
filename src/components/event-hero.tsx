@@ -2,7 +2,7 @@ import Image from "next/image";
 import { formatEventDate, formatEventTime, parseLines } from "@/lib/format";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { FitText } from "@/components/fit-text";
-import { BuyTicketsButton } from "@/components/buy-tickets-section";
+import { StickyBuyButton } from "@/components/sticky-buy-button";
 
 export function EventHero({
   title,
@@ -31,8 +31,17 @@ export function EventHero({
       <div className="glow-field" />
       <div className="dot-grid absolute inset-0 z-0 opacity-30 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
 
+      {/* Five separate grid items (not one text column + the image) so
+          mobile and lg: can each order them independently via `order` —
+          mobile wants title, photo, buy button, description, details;
+          lg: keeps the original title, description, buy, details reading
+          order in column 1 with the photo beside it in column 2. The
+          photo's explicit lg:col-start-2/row-span-4 is what lets plain
+          CSS Grid auto-placement route the other four, unpositioned,
+          straight into column 1 without each needing its own
+          lg:col-start-1. */}
       <div className="relative z-10 mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-        <div className="min-w-0">
+        <div className="order-1 min-w-0">
           {/* Deliberately hardcoded, not siteConfig.djName ("DJ Lwes") —
               same "Etfe Al Boiler" spelling requested for the header
               wordmark, used here as its own thing rather than derived
@@ -45,31 +54,34 @@ export function EventHero({
               {title}
             </FitText>
           </h1>
-          {/* whitespace-pre-line — the admin's own line breaks (Shift+Enter
-              in the /admin/events description field) are real \n
-              characters in the stored text; a plain <p> collapses them
-              into one line, running everything together regardless of
-              how it was actually entered. */}
-          <p className="mt-5 max-w-prose whitespace-pre-line text-base leading-relaxed text-ink-muted sm:text-lg">
-            {description}
-          </p>
+        </div>
 
-          {/* Front and center on arrival — the same link as the Buy
-              Tickets section further down, just impossible to miss. */}
-          <div className="mt-7 flex flex-col gap-2">
-            <BuyTicketsButton
-              buyLink={buyLink}
-              className={`w-full sm:w-auto sm:self-start ${buyLink ? "buy-pulse" : ""}`}
-            />
-            {buyLink && (
-              <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-                Secure checkout via Shmor Makom — opens in a new tab
-              </p>
-            )}
-            {disclaimer && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}
-          </div>
+        <div className="relative order-2 aspect-[4/5] w-full overflow-hidden rounded-3xl border border-line-strong shadow-[0_0_60px_-15px_rgba(177,59,255,0.45)] sm:aspect-[5/4] lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:aspect-[4/5]">
+          <Image
+            src={coverImage}
+            alt={title}
+            fill
+            priority
+            sizes="(min-width: 1024px) 480px, 100vw"
+            className="object-cover"
+            style={{ objectPosition: coverImageFocalPoint }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bg/80 via-transparent to-transparent" />
+        </div>
 
-          <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+        <StickyBuyButton buyLink={buyLink} disclaimer={disclaimer} className="order-3 min-w-0" />
+
+        {/* whitespace-pre-line — the admin's own line breaks (Shift+Enter
+            in the /admin/events description field) are real \n
+            characters in the stored text; a plain <p> collapses them
+            into one line, running everything together regardless of
+            how it was actually entered. */}
+        <p className="order-4 min-w-0 max-w-prose whitespace-pre-line text-base leading-relaxed text-ink-muted lg:order-2 sm:text-lg">
+          {description}
+        </p>
+
+        <div className="order-5 min-w-0 lg:order-4">
+          <dl className="grid gap-4 sm:grid-cols-2">
             <div className="card-edge rounded-2xl px-5 py-4">
               <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
                 Date &amp; Time
@@ -107,19 +119,6 @@ export function EventHero({
           <div className="mt-8">
             <CountdownTimer date={date} />
           </div>
-        </div>
-
-        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl border border-line-strong shadow-[0_0_60px_-15px_rgba(177,59,255,0.45)] sm:aspect-[5/4] lg:aspect-[4/5]">
-          <Image
-            src={coverImage}
-            alt={title}
-            fill
-            priority
-            sizes="(min-width: 1024px) 480px, 100vw"
-            className="object-cover"
-            style={{ objectPosition: coverImageFocalPoint }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-bg/80 via-transparent to-transparent" />
         </div>
       </div>
     </section>

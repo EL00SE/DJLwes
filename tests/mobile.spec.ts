@@ -80,6 +80,78 @@ test.describe("public pages", () => {
     expect(box!.height).toBeCloseTo(viewport!.height, 0);
   });
 
+  // Below `lg:` the hero stacks title, photo, buy button, description,
+  // details — the photo used to sit at the very bottom of the hero's text.
+  test("hero stacks title, photo, buy button, then description on mobile", async ({ page }) => {
+    await page.goto("/");
+    const isDesktop = await page.evaluate(() => window.matchMedia("(min-width: 1024px)").matches);
+    if (isDesktop) test.skip();
+
+    const tops = await page.evaluate(() => {
+      const docTop = (el: Element | null) =>
+        el ? el.getBoundingClientRect().top + window.scrollY : null;
+      const hero = document.querySelector("main section");
+      return {
+        title: docTop(hero?.querySelector("h1") ?? null),
+        photo: docTop(hero?.querySelector("img") ?? null),
+        buy: docTop(
+          hero?.querySelector('a[href^="http"], button[disabled]') ?? null
+        ),
+        description: docTop(hero?.querySelector("p.whitespace-pre-line") ?? null),
+      };
+    });
+
+    expect(tops.title).not.toBeNull();
+    expect(tops.photo!).toBeGreaterThan(tops.title!);
+    expect(tops.buy!).toBeGreaterThan(tops.photo!);
+    expect(tops.description!).toBeGreaterThan(tops.buy!);
+  });
+
+  // The hero's Buy Tickets button gets a second copy pinned to the top of
+  // the screen once you've scrolled past the first, gone again once you
+  // scroll back up to it. Only below `lg:`.
+  test("buy button pins to the top after scrolling past it, and unpins on the way back", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const isDesktop = await page.evaluate(() => window.matchMedia("(min-width: 1024px)").matches);
+    if (isDesktop) test.skip();
+
+    // Let the page-enter animation finish first: while it runs the page
+    // wrapper has a transform, which anchors position:fixed to the page
+    // instead of the screen. What matters (and what a real visitor
+    // scrolling after the first half second sees) is that it lets go
+    // afterwards — an animation fill-mode of `both` kept it forever.
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          // The Buy button's glow pulse loops forever and never "finishes".
+          .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+          .map((a) => a.finished)
+      )
+    );
+
+    const pinned = page.locator("div.fixed.inset-x-0.top-0.z-20");
+    await expect(pinned).toHaveCount(0);
+
+    const buyTop = await page.evaluate(() => {
+      const el = document.querySelector('main section a[href^="http"], main section button[disabled]');
+      return el ? el.getBoundingClientRect().top + window.scrollY : 0;
+    });
+
+    await page.evaluate((y) => window.scrollTo(0, y + 600), buyTop);
+    await expect(pinned).toHaveCount(1);
+    await expect(pinned).toBeVisible();
+    expect((await pinned.boundingBox())!.y).toBeCloseTo(0, 0);
+
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(pinned).toHaveCount(1);
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(pinned).toHaveCount(0);
+  });
+
   // Regression check for a real bug: clicking a hash-anchor nav link
   // while already on "/" worked fine (the target is already on the
   // page), but clicking it from a different page navigated to e.g.

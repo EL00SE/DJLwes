@@ -8,8 +8,10 @@ import { EventHero } from "@/components/event-hero";
 // free-request-then-approve flow (GuestRequestExperience) are kept in the
 // repo, unused — ticket buying is now a single link out to a Shmor-Makom-hosted
 // checkout page (Shmor Makom owns pricing/quantity/invoicing from here), set per
-// event in /admin/events. See buy-tickets-section.tsx.
-import { BuyTicketsSection } from "@/components/buy-tickets-section";
+// event in /admin/events. See buy-tickets-section.tsx — its BuyTicketsButton
+// is the one live copy of this, in EventHero (via StickyBuyButton); the
+// standalone BuyTicketsSection further down the page was a second one and
+// has been removed so there's only ever the single button.
 import { LineupSection } from "@/components/lineup-section";
 import { TicketTiersInfo } from "@/components/ticket-tiers-info";
 import { HomepageGalleryTeaser } from "@/components/homepage-gallery-teaser";
@@ -100,7 +102,6 @@ export default async function HomePage() {
       <InstagramSection feed={instagramFeed} fallbackPosts={aboutContent.instagramPosts} />
       <LineupSection lineup={event.lineup} />
       <TicketTiersInfo ticketTypes={event.ticketTypes} />
-      <BuyTicketsSection buyLink={event.buyLink} disclaimer={event.buyDisclaimer} />
       {pastEventWithGallery && (
         <HomepageGalleryTeaser
           eventTitle={pastEventWithGallery.title}

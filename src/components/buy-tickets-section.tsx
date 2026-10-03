@@ -1,6 +1,5 @@
 /** The Buy Tickets button itself (or its disabled "coming soon" stand-in)
- * — shared by the hero, where it's the first thing a visitor sees, and
- * the section further down the page. */
+ * — the one buy button on the page, in the hero via StickyBuyButton. */
 export function BuyTicketsButton({
   buyLink,
   className = "",
@@ -26,26 +25,5 @@ export function BuyTicketsButton({
     >
       Tickets coming soon
     </button>
-  );
-}
-
-// Ticket pricing, quantity, payment, and invoicing all live on Shmor Makom's
-// side now — this is deliberately just a link out to the checkout page
-// the admin sets per-event (see admin/events), not a form of our own.
-export function BuyTicketsSection({
-  buyLink,
-  disclaimer,
-}: {
-  buyLink: string | null;
-  disclaimer?: string | null;
-}) {
-  return (
-    <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 px-5 py-16 text-center sm:px-8">
-      <BuyTicketsButton buyLink={buyLink} />
-      <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-        Secure checkout via Shmor Makom — opens in a new tab
-      </p>
-      {disclaimer && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}
-    </div>
   );
 }

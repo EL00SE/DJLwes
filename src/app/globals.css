@@ -83,9 +83,15 @@ select {
   }
 }
 
+/* `backwards`, not `both`: the `forwards` half of `both` would keep the
+ * final keyframe's `transform: translateY(0)` applied forever, and any
+ * element with a transform becomes the containing block for its
+ * position:fixed descendants — which silently anchored the hero's pinned
+ * Buy Tickets bar to the page instead of the screen. The end state
+ * (opacity 1, no offset) is the element's natural style anyway. */
 @media (prefers-reduced-motion: no-preference) {
   .page-transition {
-    animation: page-enter 0.4s ease-out both;
+    animation: page-enter 0.4s ease-out backwards;
   }
 }
 
