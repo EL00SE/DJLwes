@@ -25,6 +25,12 @@ import { buildSocialMetadata } from "@/lib/metadata";
 // Ticket availability must always be fresh — never statically cached.
 export const dynamic = "force-dynamic";
 
+// The homepage's Instagram section is hidden for now (the video posts need
+// more work before they're ready to show). Everything behind it — the
+// section, the live-API feed, the pasted-link fallback, the admin field
+// for pasting links — is intact; flip this to true to bring it back.
+const SHOW_INSTAGRAM_SECTION = false;
+
 // Dynamic per the active event, so sharing the homepage link on
 // WhatsApp/Instagram/Twitter shows that event's own photo/title/description
 // as a rich preview instead of a generic blank card. Calls getActiveEvent()
@@ -80,14 +86,20 @@ export default async function HomePage() {
 
   // Only fetched once there's actually an active event to render this
   // alongside — the no-event branch above returns before ever needing
-  // either. Independent of each other, so run together.
+  // either. Independent of each other, so run together. The Instagram
+  // feed is skipped entirely while the section is hidden.
   const [pastEventWithGallery, instagramFeed] = await Promise.all([
     getMostRecentPastEventWithGallery(),
-    getInstagramFeed(),
+    SHOW_INSTAGRAM_SECTION ? getInstagramFeed() : null,
   ]);
 
   return (
-    <div>
+    // `relative` + the empty host below: StickyBuyButton portals its
+    // pinned Buy Tickets button in here, as a lane spanning the whole
+    // page, so it can use native position:sticky — it can't live inside
+    // the hero, whose clipping and short height would end the sticking.
+    <div className="relative">
+      <div id="buy-rail-host" />
       <EventHero
         title={event.title}
         description={event.description}
@@ -99,7 +111,9 @@ export default async function HomePage() {
         disclaimer={event.buyDisclaimer}
         entryRequirements={event.entryRequirements}
       />
-      <InstagramSection feed={instagramFeed} fallbackPosts={aboutContent.instagramPosts} />
+      {SHOW_INSTAGRAM_SECTION && (
+        <InstagramSection feed={instagramFeed} fallbackPosts={aboutContent.instagramPosts} />
+      )}
       <LineupSection lineup={event.lineup} />
       <TicketTiersInfo ticketTypes={event.ticketTypes} />
       {pastEventWithGallery && (

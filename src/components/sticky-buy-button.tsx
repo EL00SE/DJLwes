@@ -1,38 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BuyTicketsButton } from "@/components/buy-tickets-section";
 
-// How far from the top of the screen the pinned button rests. The hand-off
-// from the real button to the pinned copy happens at exactly this line, so
-// the pinned copy takes over at the identical spot, size and shape — it
-// reads as the same button sticking, not a second one appearing.
-const PIN_TOP_PX = 12;
-
-/** The hero's Buy Tickets button. Once it scrolls up to the top of the
- * screen it stays there, and drops back into place when you scroll back up
- * to where it started. Below `lg:` only — at `lg:` the button already sits
- * beside a much taller photo and rarely scrolls out of view first.
+/** The hero's Buy Tickets button. Below `lg:` it scrolls with the page like
+ * any other element, then sticks to the top of the screen and stays there
+ * for the rest of the page — until you scroll back up to where it started.
  *
- * This can't be done with plain CSS `position: sticky` — the hero
- * `<section>` has `overflow-hidden` (for the glow/dot-grid background
- * decoration), and a sticky element can never stick past the edge of an
- * overflow-hidden ancestor's own box. Once you scrolled past the end of
- * the (fairly short) hero section, a sticky button would just get clipped
- * away instead of continuing to float over the rest of the page. So there
- * are two identical buttons: the real one in the page, and a
- * `position: fixed` twin that has no such ceiling — `fixed` escapes
- * overflow-hidden ancestors. It would be trapped by any ancestor with a
- * `transform`/`filter`, which is why .page-transition (globals.css) must
- * not keep its transform after its animation ends — tests/mobile.spec.ts
- * covers this.
+ * That's the browser's own `position: sticky`, so it moves with the scroll
+ * itself: no scroll listener or observer in the path, nothing that can lag
+ * a frame behind a flick and make the button visibly jump or "snap" into
+ * place (an earlier version swapped in a fixed-position copy from an
+ * IntersectionObserver callback, which did exactly that).
  *
- * The twin is always rendered and only toggled with `visibility` (rather
- * than mounted on demand) so it exists, styled identically, and with its
- * glow animation in step with the real one's, before it's ever needed.
- * While one is showing the other is `visibility: hidden`, which also takes
- * it out of the tab order and away from screen readers — only ever one
- * live "Buy Tickets" link. */
+ * Sticky can't live in the hero itself: the hero `<section>` clips its
+ * background decoration, and a sticky element is also only ever stuck
+ * within its parent — the hero is short, so it'd let go right after the
+ * hero ended instead of following you down the page. So the sticky button
+ * lives in a lane spanning the whole page (portaled into the empty
+ * #buy-rail-host at the top of the homepage's relative-positioned
+ * wrapper, see app/page.tsx), whose top edge is positioned to start
+ * exactly where the real button sits here. The real button stays in the
+ * hero as an invisible placeholder so the layout doesn't change, and at
+ * `lg:` — where nothing sticks — it's simply the visible one.
+ *
+ * Until the lane is measured and in place (or without JS), the real
+ * button just shows normally. Both swap in the same React commit, so
+ * there's no frame with neither or both. While one is visible the other
+ * is `visibility: hidden`, which also keeps it out of the tab order and
+ * away from screen readers — only ever one live "Buy Tickets" link. */
 export function StickyBuyButton({
   buyLink,
   disclaimer,
@@ -42,40 +39,52 @@ export function StickyBuyButton({
   disclaimer: string | null;
   className?: string;
 }) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const [stuck, setStuck] = useState(false);
+  const slotRef = useRef<HTMLDivElement>(null);
+  const [rail, setRail] = useState<{ host: HTMLElement; top: number } | null>(null);
 
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Not just `!isIntersecting` — that's also true before you've
-        // scrolled down this far yet (sentinel below the viewport). Only
-        // above the pin line means you've scrolled up to or past it.
-        setStuck(!entry.isIntersecting && entry.boundingClientRect.top < PIN_TOP_PX);
-      },
-      // Shrinks the observed area's top edge down to the pin line, so
-      // "left the screen" really means "reached the pin line".
-      { rootMargin: `-${PIN_TOP_PX}px 0px 0px 0px` }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
+  // Where the lane starts: the real button's top edge, measured relative to
+  // the page wrapper (a difference of two viewport positions, so it doesn't
+  // depend on scroll). Re-measured whenever anything that could move it
+  // resizes — the photo loading, the title refitting, fonts swapping in.
+  useLayoutEffect(() => {
+    const slot = slotRef.current;
+    const host = document.getElementById("buy-rail-host");
+    const wrapper = host?.parentElement;
+    if (!slot || !host || !wrapper) return;
+
+    let cancelled = false;
+    const measure = () => {
+      if (cancelled) return;
+      const top = Math.round((slot.getBoundingClientRect().top - wrapper.getBoundingClientRect().top) * 100) / 100;
+      setRail((prev) => (prev && prev.top === top ? prev : { host, top }));
+    };
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrapper);
+    observer.observe(slot);
+    window.addEventListener("resize", measure);
+    document.fonts?.ready.then(measure);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   const buttonClassName = `w-full sm:w-auto sm:self-start ${buyLink ? "buy-pulse" : ""}`;
 
   return (
     <div className={className}>
-      <div ref={sentinelRef} aria-hidden className="h-px" />
       <div className="flex flex-col gap-2">
-        {/* max-lg: because `stuck` also flips on desktop, where nothing is
-            pinned and this button has to stay put. */}
-        <div data-testid="buy-original" className="flex flex-col">
-          <BuyTicketsButton
-            buyLink={buyLink}
-            className={`${buttonClassName} ${stuck ? "max-lg:invisible" : ""}`}
-          />
+        {/* max-lg: because at lg and up nothing sticks, so this stays
+            the visible one. */}
+        <div
+          ref={slotRef}
+          data-testid="buy-original"
+          className={`flex flex-col ${rail ? "max-lg:invisible" : ""}`}
+        >
+          <BuyTicketsButton buyLink={buyLink} className={buttonClassName} />
         </div>
         {buyLink && (
           <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
@@ -85,24 +94,30 @@ export function StickyBuyButton({
         {disclaimer && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}
       </div>
 
-      {/* The strip itself ignores taps so it doesn't block the page
-          beside/behind the button; only the button takes them. Same
-          container, gutter and button classes as the real one so the two
-          line up pixel for pixel. */}
-      <div
-        data-testid="buy-pinned"
-        style={{ top: PIN_TOP_PX }}
-        className={`pointer-events-none fixed inset-x-0 z-20 lg:hidden ${
-          stuck ? "visible" : "invisible"
-        }`}
-      >
-        <div className="mx-auto flex max-w-6xl flex-col px-5 sm:px-8">
-          <BuyTicketsButton
-            buyLink={buyLink}
-            className={`pointer-events-auto ${buttonClassName}`}
-          />
-        </div>
-      </div>
+      {rail &&
+        createPortal(
+          // The lane: starts where the real button does, runs to the bottom
+          // of the page content (so the button lets go there, above the
+          // footer, the way sticky normally ends). It ignores taps itself so
+          // it never blocks the page; only the button takes them. Same
+          // container, gutter and classes as the real button so the two
+          // line up exactly. top-3 = 12px, the resting distance from the top.
+          <div
+            data-testid="buy-pinned"
+            style={{ top: rail.top }}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-20 lg:hidden"
+          >
+            <div className="sticky top-3">
+              <div className="mx-auto flex max-w-6xl flex-col px-5 sm:px-8">
+                <BuyTicketsButton
+                  buyLink={buyLink}
+                  className={`pointer-events-auto ${buttonClassName}`}
+                />
+              </div>
+            </div>
+          </div>,
+          rail.host
+        )}
     </div>
   );
 }

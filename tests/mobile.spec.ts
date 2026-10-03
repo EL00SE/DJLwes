@@ -107,76 +107,101 @@ test.describe("public pages", () => {
     expect(tops.description!).toBeGreaterThan(tops.buy!);
   });
 
-  // The hero's Buy Tickets button sticks to the top of the screen once it
-  // scrolls up there, and drops back into place on the way back up. It's
-  // really two identical buttons trading places (the real one and a fixed
-  // twin), so the checks are that they trade at the right moment, match
-  // in size, and that only one is ever showing. Only below `lg:`.
-  test("buy button sticks to the top as the same button, and releases on the way back", async ({
+  // The hero's Buy Tickets button scrolls with the page, then sticks to the
+  // top of the screen for the rest of the page, and drops back into place
+  // on the way up. It's the browser's own position:sticky (so it can't lag
+  // or "snap"): the checks are that it tracks the real button's spot
+  // exactly right up to the top, rests there, and that only one of the two
+  // is ever showing. Only below `lg:`.
+  test("buy button follows the page, sticks to the top, and releases on the way back", async ({
     page,
   }) => {
     await page.goto("/");
     const isDesktop = await page.evaluate(() => window.matchMedia("(min-width: 1024px)").matches);
     if (isDesktop) test.skip();
 
-    // Let the page-enter animation finish first: while it runs the page
-    // wrapper has a transform, which anchors position:fixed to the page
-    // instead of the screen. What matters (and what a real visitor
-    // scrolling after the first half second sees) is that it lets go
-    // afterwards — an animation fill-mode of `both` kept it forever.
-    await page.evaluate(() =>
-      Promise.all(
-        document
-          .getAnimations()
-          // The Buy button's glow pulse loops forever and never "finishes".
-          .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
-          .map((a) => a.finished)
-      )
-    );
-
     const original = page.getByTestId("buy-original").locator("a, button");
     const pinned = page.getByTestId("buy-pinned");
-    const pinnedButton = pinned.locator("a, button");
 
-    // Scrolls so the real button's top edge sits `topPx` from the top of
-    // the screen (its layout box is measurable even while it's hidden).
-    const originalDocTop = await original.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
-    const scrollOriginalTo = (topPx: number) =>
-      page.evaluate((y) => window.scrollTo(0, y), originalDocTop - topPx);
-
-    // Before it reaches the top: the real button shows, the twin doesn't.
-    await expect(pinned).toBeHidden();
-    await expect(original).toBeVisible();
-    await scrollOriginalTo(60);
-    await expect(pinned).toBeHidden();
-    await expect(original).toBeVisible();
-
-    // Just short of the pin line (12px): still the real one.
-    await scrollOriginalTo(20);
-    await expect(pinned).toBeHidden();
-    await expect(original).toBeVisible();
-
-    // Reached it: the twin takes over, in the same spot...
-    await scrollOriginalTo(4);
+    // The sticky one takes over as soon as it's measured into place.
     await expect(pinned).toBeVisible();
     await expect(original).toHaveCSS("visibility", "hidden");
-    const pinnedBox = (await pinnedButton.boundingBox())!;
-    expect(pinnedBox.y).toBeCloseTo(12, 0);
-    // ...and as the same button — same size, not a bar around it.
-    const originalBox = (await original.boundingBox())!;
-    expect(pinnedBox.width).toBeCloseTo(originalBox.width, 0);
-    expect(pinnedBox.height).toBeCloseTo(originalBox.height, 0);
-    expect(pinnedBox.x).toBeCloseTo(originalBox.x, 0);
 
-    // Stays put for the rest of the page.
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    // Both buttons' boxes read in one go, at the same instant. (The site
+    // smooth-scrolls, so reading them in two separate calls would catch
+    // them at different moments of a scroll animation and look offset.)
+    const read = () =>
+      page.evaluate(() => {
+        const box = (sel: string) => {
+          const r = document.querySelector(sel)!.getBoundingClientRect();
+          return { x: r.left, y: r.top, width: r.width, height: r.height };
+        };
+        return {
+          original: box('[data-testid="buy-original"] a, [data-testid="buy-original"] button'),
+          pinned: box('[data-testid="buy-pinned"] a, [data-testid="buy-pinned"] button'),
+        };
+      });
+
+    // For a moment after load the page is still settling by a few pixels
+    // (the title refits its font size, shifting everything below it) and
+    // the lane follows a frame behind. Wait for it to hold still, as a
+    // visitor scrolling a moment later would find it.
+    await expect
+      .poll(
+        async () => {
+          const before = (await read()).original.y;
+          await page.waitForTimeout(250);
+          return Math.abs((await read()).original.y - before);
+        },
+        { timeout: 5000 }
+      )
+      .toBeLessThan(0.1);
+
+    // Scrolls (instantly) so the real button's spot sits `topPx` from the
+    // top of the screen; its layout box is still measurable while hidden.
+    const scrollSpotTo = (topPx: number) =>
+      original.evaluate(
+        (el, t) =>
+          window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - t, behavior: "instant" }),
+        topPx
+      );
+
+    // Same button as the real one: same size and left edge, not a bar.
+    const expectSameButton = async () => {
+      const { original: a, pinned: b } = await read();
+      expect(b.width).toBeCloseTo(a.width, 0);
+      expect(b.height).toBeCloseTo(a.height, 0);
+      expect(b.x).toBeCloseTo(a.x, 0);
+      return { a, b };
+    };
+
+    // Before it reaches the top it sits exactly where the real button
+    // does, all the way up — nothing jumps ahead of or behind the scroll.
+    for (const topPx of [300, 120, 60, 20, 13]) {
+      await scrollSpotTo(topPx);
+      const { a, b } = await expectSameButton();
+      // (Half-pixel layout positions, so a whole pixel of slack on where
+      // the scroll landed; the comparison that matters is the next line.)
+      expect(Math.abs(a.y - topPx)).toBeLessThan(1);
+      expect(b.y).toBeCloseTo(a.y, 0);
+    }
+
+    // Past the top it stays at 12px instead of scrolling away...
+    for (const topPx of [4, -100, -600]) {
+      await scrollSpotTo(topPx);
+      expect((await read()).pinned.y).toBeCloseTo(12, 0);
+    }
+
+    // ...for the rest of the page.
+    await page.evaluate(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" }));
     await expect(pinned).toBeVisible();
-    expect((await pinnedButton.boundingBox())!.y).toBeCloseTo(12, 0);
+    expect((await read()).pinned.y).toBeCloseTo(12, 0);
 
-    // Back up to where it started: the real one is back, the twin is gone.
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(pinned).toBeHidden();
-    await expect(original).toBeVisible();
+    // Back up to where it started: it's back in its place.
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    const { a, b } = await expectSameButton();
+    expect(b.y).toBeCloseTo(a.y, 0);
+    await expect(original).toHaveCSS("visibility", "hidden");
   });
 
   // Regression check for a real bug: clicking a hash-anchor nav link
@@ -271,7 +296,11 @@ test.describe("public pages", () => {
 // them (page 320px -> 1507px), so everything pinned to the viewport — the
 // sticky Buy button — changed size, and the whole page zoomed out. The
 // embeds only load from instagram.com, so this can only catch a regression
-// when that's reachable; it passes (rather than flakes) when it isn't.
+// when that's reachable; it passes (rather than flakes) when it isn't. The
+// Instagram section is currently hidden (SHOW_INSTAGRAM_SECTION in
+// app/page.tsx), so right now this just guards the page and Buy button
+// against any sideways growth; it does its original job again the moment
+// the section is switched back on.
 test.describe("on a real phone (mobile emulation)", () => {
   test.use({ isMobile: true, hasTouch: true });
 
