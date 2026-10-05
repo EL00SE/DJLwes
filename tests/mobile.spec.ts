@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mintAdminSessionCookie } from "./admin-auth";
+import { googleMapsUrl, wazeUrl } from "../src/lib/maps";
 
 // Read-only layout checks — no login-form submissions, no writes to the
 // database (this app's local/dev database is the same one production
@@ -105,6 +106,31 @@ test.describe("public pages", () => {
     expect(tops.photo!).toBeGreaterThan(tops.title!);
     expect(tops.buy!).toBeGreaterThan(tops.photo!);
     expect(tops.description!).toBeGreaterThan(tops.buy!);
+  });
+
+  // The event's location is a tappable link into Google Maps, with a Waze
+  // link beside it — both searching exactly the text shown, opening in a
+  // new tab (on a phone, straight into the app if it's installed).
+  test("event location opens in Google Maps and Waze", async ({ page }) => {
+    await page.goto("/");
+    const card = page.locator("main section dl > div").filter({ hasText: "Location" });
+    const google = card.getByRole("link", { name: /Google Maps/ });
+    const waze = card.getByRole("link", { name: /^Waze/ });
+    await expect(google).toBeVisible();
+    await expect(waze).toBeVisible();
+
+    const place = (await google.locator("span.underline").innerText()).trim();
+    expect(place.length).toBeGreaterThan(0);
+    await expect(google).toHaveAttribute("href", googleMapsUrl(place));
+    await expect(waze).toHaveAttribute("href", wazeUrl(place));
+    for (const link of [google, waze]) {
+      await expect(link).toHaveAttribute("target", "_blank");
+      await expect(link).toHaveAttribute("rel", /noreferrer/);
+    }
+
+    // Big enough to hit with a thumb.
+    expect((await waze.boundingBox())!.height).toBeGreaterThanOrEqual(30);
+    expect((await google.boundingBox())!.height).toBeGreaterThanOrEqual(24);
   });
 
   // The hero's Buy Tickets button scrolls with the page, then sticks to the
