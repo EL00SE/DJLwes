@@ -108,19 +108,23 @@ test.describe("public pages", () => {
     expect(tops.description!).toBeGreaterThan(tops.buy!);
   });
 
-  // The event's location is a tappable link into Google Maps, with a Waze
-  // link beside it — both searching exactly the text shown, opening in a
-  // new tab (on a phone, straight into the app if it's installed).
-  test("event location opens in Google Maps and Waze", async ({ page }) => {
+  // The event's location is plain text with two equal buttons beside it, one
+  // for Google Maps and one for Waze — both searching exactly the text
+  // shown, opening in a new tab (on a phone, straight into the app if it's
+  // installed).
+  test("event location has a Google Maps button and a Waze button", async ({ page }) => {
     await page.goto("/");
     const card = page.locator("main section dl > div").filter({ hasText: "Location" });
-    const google = card.getByRole("link", { name: /Google Maps/ });
+    const google = card.getByRole("link", { name: /^Google Maps/ });
     const waze = card.getByRole("link", { name: /^Waze/ });
     await expect(google).toBeVisible();
     await expect(waze).toBeVisible();
 
-    const place = (await google.locator("span.underline").innerText()).trim();
+    // The place itself is just text now, not a link.
+    const place = (await card.getByTestId("event-location").innerText()).trim();
     expect(place.length).toBeGreaterThan(0);
+    await expect(card.locator('a [data-testid="event-location"]')).toHaveCount(0);
+
     await expect(google).toHaveAttribute("href", googleMapsUrl(place));
     await expect(waze).toHaveAttribute("href", wazeUrl(place));
     for (const link of [google, waze]) {
@@ -128,9 +132,12 @@ test.describe("public pages", () => {
       await expect(link).toHaveAttribute("rel", /noreferrer/);
     }
 
-    // Big enough to hit with a thumb.
-    expect((await waze.boundingBox())!.height).toBeGreaterThanOrEqual(30);
-    expect((await google.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+    // Equal weight (same size), and big enough to hit with a thumb.
+    const g = (await google.boundingBox())!;
+    const w = (await waze.boundingBox())!;
+    expect(g.height).toBeGreaterThanOrEqual(30);
+    expect(w.height).toBeGreaterThanOrEqual(30);
+    expect(g.height).toBeCloseTo(w.height, 0);
   });
 
   // The hero's Buy Tickets button scrolls with the page, then sticks to the

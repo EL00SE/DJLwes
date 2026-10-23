@@ -5,6 +5,10 @@ import { CountdownTimer } from "@/components/countdown-timer";
 import { FitText } from "@/components/fit-text";
 import { StickyBuyButton } from "@/components/sticky-buy-button";
 
+// Same look for both directions buttons so neither app is favored.
+const MAP_BUTTON_CLASSNAME =
+  "rounded-full border border-line-strong px-4 py-2 font-mono text-[10px] uppercase tracking-[0.15em] text-accent-bright transition-colors hover:bg-accent hover:text-white active:bg-accent active:text-white";
+
 export function EventHero({
   title,
   description,
@@ -97,15 +101,13 @@ export function EventHero({
               <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
                 Location
               </dt>
-              {/* The place itself is the link (Google Maps); Waze sits
-                  beside it for those who navigate with that instead. Both
-                  just search the typed location text — see lib/maps.ts. */}
-              <dd className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
-                <a
-                  href={googleMapsUrl(location)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group inline-flex items-start gap-1.5 py-1 text-sm font-medium text-ink transition-colors hover:text-accent-bright active:text-accent-bright"
+              {/* Plain text for the place, then two equal buttons for
+                  directions. Both just search the typed location text —
+                  see lib/maps.ts. */}
+              <dd className="mt-1">
+                <p
+                  data-testid="event-location"
+                  className="flex items-start gap-1.5 text-sm font-medium text-ink"
                 >
                   <svg
                     aria-hidden
@@ -120,20 +122,28 @@ export function EventHero({
                     <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
-                  <span className="underline decoration-line-strong underline-offset-4 transition-colors group-hover:decoration-accent-bright">
-                    {location}
-                  </span>
-                  <span className="sr-only"> — open in Google Maps (opens in a new tab)</span>
-                </a>
-                <a
-                  href={wazeUrl(location)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-line-strong px-4 py-2 font-mono text-[10px] uppercase tracking-[0.15em] text-accent-bright transition-colors hover:bg-accent hover:text-white active:bg-accent active:text-white"
-                >
-                  Waze
-                  <span className="sr-only"> — open in Waze (opens in a new tab)</span>
-                </a>
+                  <span>{location}</span>
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a
+                    href={googleMapsUrl(location)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={MAP_BUTTON_CLASSNAME}
+                  >
+                    Google Maps
+                    <span className="sr-only"> — directions (opens in a new tab)</span>
+                  </a>
+                  <a
+                    href={wazeUrl(location)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={MAP_BUTTON_CLASSNAME}
+                  >
+                    Waze
+                    <span className="sr-only"> — directions (opens in a new tab)</span>
+                  </a>
+                </div>
               </dd>
             </div>
           </dl>
