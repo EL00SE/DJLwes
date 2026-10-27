@@ -72,7 +72,7 @@ export default async function HomePage() {
         </Link>
 
         <div className="mt-6 flex flex-col items-center gap-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-faint">
             Want to know the second it&apos;s announced?
           </p>
           <NotifySignupForm />

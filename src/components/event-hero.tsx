@@ -7,7 +7,7 @@ import { StickyBuyButton } from "@/components/sticky-buy-button";
 
 // Same look for both directions buttons so neither app is favored.
 const MAP_BUTTON_CLASSNAME =
-  "rounded-full border border-line-strong px-4 py-2 font-mono text-[10px] uppercase tracking-[0.15em] text-accent-bright transition-colors hover:bg-accent hover:text-white active:bg-accent active:text-white";
+  "inline-flex min-h-11 items-center rounded-full border border-line-strong px-4 py-2 font-mono text-[11px] uppercase tracking-[0.15em] text-accent-bright transition-colors hover:bg-accent hover:text-white active:bg-accent active:text-white";
 
 export function EventHero({
   title,
@@ -69,6 +69,7 @@ export function EventHero({
             alt={title}
             fill
             priority
+            fetchPriority="high"
             sizes="(min-width: 1024px) 480px, 100vw"
             className="object-cover"
             style={{ objectPosition: coverImageFocalPoint }}
@@ -95,7 +96,7 @@ export function EventHero({
         <div className="order-5 min-w-0 lg:order-4">
           <dl className="grid gap-4 sm:grid-cols-2">
             <div className="card-edge rounded-2xl px-5 py-4">
-              <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+              <dt className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-faint">
                 Date &amp; Time
               </dt>
               <dd className="mt-1 text-sm font-medium text-ink">
@@ -105,7 +106,7 @@ export function EventHero({
               </dd>
             </div>
             <div className="card-edge rounded-2xl px-5 py-4">
-              <dt className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
+              <dt className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-faint">
                 Location
               </dt>
               {/* Plain text for the place, then two equal buttons for
@@ -157,7 +158,7 @@ export function EventHero({
 
           {rules.length > 0 && (
             <div className="card-edge mt-4 rounded-2xl border border-line-strong px-5 py-4">
-              <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-accent-bright">
+              <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-accent-bright">
                 Entry requirements
               </p>
               <ul className="flex flex-col gap-1.5">

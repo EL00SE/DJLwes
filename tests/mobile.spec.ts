@@ -166,6 +166,11 @@ test.describe("public pages", () => {
     await page.goto("/");
     const isDesktop = await page.evaluate(() => window.matchMedia("(min-width: 1024px)").matches);
     if (isDesktop) test.skip();
+    // Marked sold out by hand in the admin: no buy button, so nothing sticks.
+    test.skip(
+      (await page.getByRole("button", { name: "Sold out" }).count()) > 0,
+      "The live event is marked sold out right now, so there's no buy button to stick."
+    );
 
     const original = page.getByTestId("buy-original").locator("a, button");
     const pinned = page.getByTestId("buy-pinned");

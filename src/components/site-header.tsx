@@ -90,7 +90,7 @@ export function SiteHeader({ isAdmin }: { isAdmin: boolean }) {
         ref={topBarRef}
         className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8"
       >
-        <Link href="/" className="group flex items-center gap-3">
+        <Link href="/" className="group flex items-center gap-3 max-sm:min-h-11">
           <span className="relative block h-9 w-9 shrink-0 overflow-hidden rounded-full ring-1 ring-line-strong transition-shadow group-hover:shadow-[0_0_18px_-2px_var(--color-accent)]">
             <Image
               // Decorative — the wordmark right next to it already names

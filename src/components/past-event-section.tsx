@@ -78,7 +78,7 @@ export function PastEventSection({
               )}
               {item.caption && (
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-bg/90 to-transparent p-2">
-                  <p className="font-mono text-[10px] uppercase tracking-wide text-ink-muted">
+                  <p className="font-mono text-[11px] uppercase tracking-wide text-ink-muted">
                     {item.caption}
                   </p>
                 </div>

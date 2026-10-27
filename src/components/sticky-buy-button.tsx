@@ -92,7 +92,7 @@ export function StickyBuyButton({
         </div>
         {/* Nothing about checkout or sales terms once there's nothing to sell. */}
         {buyLink && !soldOut && (
-          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
+          <p className="font-mono text-[11px] uppercase tracking-[0.15em] text-ink-faint">
             Secure checkout via Shmor Makom — opens in a new tab
           </p>
         )}
