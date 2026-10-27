@@ -43,6 +43,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     entryRequirements,
     buyDisclaimer,
     isActive,
+    soldOut,
   } = parsed.data;
 
   let parsedDate: Date;
@@ -71,6 +72,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       lineup: lineup || null,
       entryRequirements: entryRequirements || null,
       buyDisclaimer: buyDisclaimer || null,
+      // Only touched when the request actually says so, so an older client
+      // that doesn't send it can't quietly un-sell-out an event.
+      ...(soldOut === undefined ? {} : { soldOut }),
       ...(isActive ? {} : { isActive: false }),
     },
   });

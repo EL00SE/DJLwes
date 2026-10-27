@@ -14,6 +14,7 @@ export const eventFormSchema = z.object({
   entryRequirements: z.string().trim().max(2000).optional().or(z.literal("")),
   buyDisclaimer: z.string().trim().max(500).optional().or(z.literal("")),
   isActive: z.boolean().optional(),
+  soldOut: z.boolean().optional(),
 });
 
 function slugify(title: string): string {

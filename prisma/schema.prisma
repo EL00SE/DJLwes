@@ -28,6 +28,12 @@ model Event {
   coverImageFocalPoint String  @default("50% 50%")
   isActive             Boolean @default(false)
 
+  /// Switched on by hand in /admin/events when there's nothing left to sell.
+  /// Checkout lives on Shmor Makom's side, so this site can't know the real
+  /// count — this just swaps the hero's Buy Tickets button for a disabled
+  /// "Sold out" one so buyers aren't sent off to buy tickets that don't exist.
+  soldOut Boolean @default(false)
+
   /// External checkout link for this event (a Shmor-Makom-hosted payment page —
   /// Shmor Makom owns pricing/quantity/invoicing from here). Null until the admin
   /// sets one; the homepage shows a disabled "coming soon" button until then.

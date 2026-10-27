@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Event" ADD COLUMN "soldOut" BOOLEAN NOT NULL DEFAULT false;

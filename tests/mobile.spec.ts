@@ -108,6 +108,20 @@ test.describe("public pages", () => {
     expect(tops.description!).toBeGreaterThan(tops.buy!);
   });
 
+  // Whether the live event is marked sold out is set by hand in the admin
+  // (and these tests never write), so this only applies while it is.
+  test("when the event is marked sold out, the hero offers no way to buy", async ({ page }) => {
+    await page.goto("/");
+    const soldOutButton = page.getByRole("button", { name: "Sold out" });
+    test.skip((await soldOutButton.count()) === 0, "The live event isn't marked sold out right now.");
+
+    await expect(soldOutButton).toBeDisabled();
+    await expect(page.getByRole("link", { name: /Buy Tickets/ })).toHaveCount(0);
+    await expect(page.getByText("Secure checkout via Shmor Makom")).toHaveCount(0);
+    // Nothing to follow you down the page, either.
+    await expect(page.getByTestId("buy-pinned")).toHaveCount(0);
+  });
+
   // The event's location is plain text with two equal buttons beside it, one
   // for Google Maps and one for Waze — both searching exactly the text
   // shown, opening in a new tab (on a phone, straight into the app if it's
@@ -403,6 +417,16 @@ test.describe("admin pages (signed in)", () => {
     // fails on opacity:0-and-not-hovered, which is exactly how that bug
     // looked.
     await expect(removeButtons.first()).toBeVisible();
+  });
+
+  // Read-only: only looks at the form, never saves. The switch that lets
+  // the admin mark an event sold out by hand — a new event starts out
+  // not sold out.
+  test("event form has a Sold out switch, off for a new event", async ({ page }) => {
+    await page.goto("/admin/events/new");
+    const soldOut = page.getByRole("checkbox", { name: /Sold out/ });
+    await expect(soldOut).toBeVisible();
+    await expect(soldOut).not.toBeChecked();
   });
 
   test("mobile menu offers a way back to the dashboard when signed in", async ({ page }) => {

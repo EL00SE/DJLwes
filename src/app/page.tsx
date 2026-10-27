@@ -108,6 +108,7 @@ export default async function HomePage() {
         coverImage={event.coverImage}
         coverImageFocalPoint={event.coverImageFocalPoint}
         buyLink={event.buyLink}
+        soldOut={event.soldOut}
         disclaimer={event.buyDisclaimer}
         entryRequirements={event.entryRequirements}
       />

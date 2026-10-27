@@ -32,10 +32,12 @@ import { BuyTicketsButton } from "@/components/buy-tickets-section";
  * away from screen readers — only ever one live "Buy Tickets" link. */
 export function StickyBuyButton({
   buyLink,
+  soldOut = false,
   disclaimer,
   className = "",
 }: {
   buyLink: string | null;
+  soldOut?: boolean;
   disclaimer: string | null;
   className?: string;
 }) {
@@ -47,6 +49,8 @@ export function StickyBuyButton({
   // depend on scroll). Re-measured whenever anything that could move it
   // resizes — the photo loading, the title refitting, fonts swapping in.
   useLayoutEffect(() => {
+    // A "Sold out" button has nothing to follow you down the page for.
+    if (soldOut) return;
     const slot = slotRef.current;
     const host = document.getElementById("buy-rail-host");
     const wrapper = host?.parentElement;
@@ -70,9 +74,9 @@ export function StickyBuyButton({
       observer.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, []);
+  }, [soldOut]);
 
-  const buttonClassName = `w-full sm:w-auto sm:self-start ${buyLink ? "buy-pulse" : ""}`;
+  const buttonClassName = `w-full sm:w-auto sm:self-start ${buyLink && !soldOut ? "buy-pulse" : ""}`;
 
   return (
     <div className={className}>
@@ -82,19 +86,20 @@ export function StickyBuyButton({
         <div
           ref={slotRef}
           data-testid="buy-original"
-          className={`flex flex-col ${rail ? "max-lg:invisible" : ""}`}
+          className={`flex flex-col ${rail && !soldOut ? "max-lg:invisible" : ""}`}
         >
-          <BuyTicketsButton buyLink={buyLink} className={buttonClassName} />
+          <BuyTicketsButton buyLink={buyLink} soldOut={soldOut} className={buttonClassName} />
         </div>
-        {buyLink && (
+        {/* Nothing about checkout or sales terms once there's nothing to sell. */}
+        {buyLink && !soldOut && (
           <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
             Secure checkout via Shmor Makom — opens in a new tab
           </p>
         )}
-        {disclaimer && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}
+        {disclaimer && !soldOut && <p className="max-w-md text-xs text-ink-faint">{disclaimer}</p>}
       </div>
 
-      {rail &&
+      {rail && !soldOut &&
         createPortal(
           // The lane: starts where the real button does, runs to the bottom
           // of the page content (so the button lets go there, above the

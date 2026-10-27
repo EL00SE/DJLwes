@@ -36,6 +36,7 @@ export async function POST(request: Request) {
     entryRequirements,
     buyDisclaimer,
     isActive,
+    soldOut,
   } = parsed.data;
 
   let parsedDate: Date;
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
       lineup: lineup || null,
       entryRequirements: entryRequirements || null,
       buyDisclaimer: buyDisclaimer || null,
+      soldOut: soldOut === true,
     },
   });
 

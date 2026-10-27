@@ -29,6 +29,7 @@ export type EventFormInitialValues = {
   entryRequirements: string;
   buyDisclaimer: string;
   isActive: boolean;
+  soldOut: boolean;
 };
 
 export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
@@ -49,6 +50,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
   const [entryRequirements, setEntryRequirements] = useState(initial?.entryRequirements ?? "");
   const [buyDisclaimer, setBuyDisclaimer] = useState(initial?.buyDisclaimer ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? false);
+  const [soldOut, setSoldOut] = useState(initial?.soldOut ?? false);
 
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,6 +100,7 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         entryRequirements,
         buyDisclaimer,
         isActive,
+        soldOut,
       };
       const res = await fetch(isEdit ? `/api/admin/events/${initial!.id}` : "/api/admin/events", {
         method: isEdit ? "PATCH" : "POST",
@@ -285,6 +288,22 @@ export function EventForm({ initial }: { initial?: EventFormInitialValues }) {
         <span>
           Make this the live event on the homepage
           <span className="ml-1.5 text-ink-faint">(replaces whichever event is active now)</span>
+        </span>
+      </label>
+
+      <label className="flex items-start gap-2.5 text-sm">
+        <input
+          type="checkbox"
+          checked={soldOut}
+          onChange={(e) => setSoldOut(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-line-strong"
+        />
+        <span>
+          Sold out
+          <span className="ml-1.5 text-ink-faint">
+            (replaces the Buy Tickets button with a disabled &quot;Sold out&quot; one, so no one is sent
+            to buy tickets that aren&apos;t there — untick it to put tickets back on sale)
+          </span>
         </span>
       </label>
 

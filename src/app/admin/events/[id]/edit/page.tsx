@@ -41,6 +41,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           entryRequirements: event.entryRequirements ?? "",
           buyDisclaimer: event.buyDisclaimer ?? "",
           isActive: event.isActive,
+          soldOut: event.soldOut,
         }}
       />
 

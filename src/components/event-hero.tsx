@@ -17,6 +17,7 @@ export function EventHero({
   coverImage,
   coverImageFocalPoint,
   buyLink,
+  soldOut,
   disclaimer,
   entryRequirements,
 }: {
@@ -27,6 +28,7 @@ export function EventHero({
   coverImage: string;
   coverImageFocalPoint: string;
   buyLink: string | null;
+  soldOut: boolean;
   disclaimer: string | null;
   entryRequirements: string | null;
 }) {
@@ -74,7 +76,12 @@ export function EventHero({
           <div className="absolute inset-0 bg-gradient-to-t from-bg/80 via-transparent to-transparent" />
         </div>
 
-        <StickyBuyButton buyLink={buyLink} disclaimer={disclaimer} className="order-3 min-w-0" />
+        <StickyBuyButton
+          buyLink={buyLink}
+          soldOut={soldOut}
+          disclaimer={disclaimer}
+          className="order-3 min-w-0"
+        />
 
         {/* whitespace-pre-line — the admin's own line breaks (Shift+Enter
             in the /admin/events description field) are real \n
